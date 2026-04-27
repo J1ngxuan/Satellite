@@ -1,0 +1,31 @@
+# Operating system files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor and IDE metadata
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Local agent/tool settings
+.claude/settings.local.json
+
+# MATLAB autosaves, backups, and caches
+*.asv
+*.m~
+*.mlx~
+slprj/
+codegen/
+*.slxc
+
+# Build and generated runtime artifacts
+*.log
+*.tmp
+*.bak
+*.orig
+
+# Large generated MATLAB data files should be added deliberately if needed.
+*.mat
