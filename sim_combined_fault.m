@@ -22,6 +22,8 @@ function out = sim_combined_fault(P, opts)
 %                       thruster faults, default true
 %   .attitude_maneuver_s fixed pre-burn attitude maneuver time [s],
 %                       default 20
+%   .sat_window_s      steady-state evaluation window after burn [s],
+%                       default 20
 %   .att_threshold_deg attitude failure threshold, default 0.1
 %   .dv_threshold_rel  delta-v relative error threshold, default 0.05
 %
@@ -68,8 +70,6 @@ end
 dt = opts.dt;
 T_burn = opts.T_burn;
 T_end = opts.T_end;
-num_steps = round(T_end / dt);
-t = (0:num_steps-1).' * dt;
 
 dv_target_mag = opts.dv_target_mag;
 acc_cmd_mag = dv_target_mag / T_burn;
@@ -88,6 +88,9 @@ end
 q_cmd_burn = local_quat_from_two_vectors(burn_dir_body, dv_dir_inertial);
 burn_start_s = double(attitude_first_used) * opts.attitude_maneuver_s;
 burn_stop_s = burn_start_s + T_burn;
+T_end = max(T_end, burn_stop_s + opts.sat_window_s);
+num_steps = round(T_end / dt);
+t = (0:num_steps-1).' * dt;
 
 % Use the wheel-failure initial condition so the combined case evaluates
 % attitude recovery as well as burn-time disturbance rejection.
@@ -167,8 +170,10 @@ for k = 1:num_steps
     res_torque_log(k) = norm(Tb_thr - T_thr_des);
 end
 
-idx_final = t >= (t(end) - 20);
-idx_prev = t >= max(0, t(end) - 40) & t < (t(end) - 20);
+window_s = opts.sat_window_s;
+final_start_s = max(burn_stop_s, t(end) - window_s);
+idx_final = t >= final_start_s;
+idx_prev = t >= max(0, final_start_s - window_s) & t < final_start_s;
 if ~any(idx_prev)
     idx_prev = idx_final;
 end
@@ -198,6 +203,8 @@ out.dv_dir_inertial = dv_dir_inertial;
 out.burn_dir_body = burn_dir_body;
 out.q_cmd_burn = q_cmd_burn;
 out.burn_start_s = burn_start_s;
+out.burn_stop_s = burn_stop_s;
+out.final_window_start_s = final_start_s;
 out.attitude_first_used = attitude_first_used;
 out.retarget_feasible = retarget_feasible;
 out.retarget_force_rel = retarget_force_rel;
