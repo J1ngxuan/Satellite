@@ -191,11 +191,12 @@ att = [results.attitude_fail];
 orb = [results.orbit_fail];
 coop = [results.co_control_fail];
 assist = [results.assist_used];
+att_first = [results.attitude_first_used];
 
 fprintf('Fault-tree cases: %d | top events: %d (%.1f%%)\n', ...
     num_cases, nnz(top), 100*mean(top));
-fprintf('  branches: attitude=%d, orbit=%d, co-control=%d | thruster assist used=%d\n', ...
-    nnz(att), nnz(orb), nnz(coop), nnz(assist));
+fprintf('  branches: attitude=%d, orbit=%d, co-control=%d | thruster assist used=%d | attitude-first burns=%d\n', ...
+    nnz(att), nnz(orb), nnz(coop), nnz(assist), nnz(att_first));
 
 fprintf('%-7s %-8s %8s %8s %9s %8s %s\n', ...
     'WheelN', 'ThrMode', 'Cases', 'Top[%]', 'AttMax', 'DvMax[%]', 'Assist[%]');

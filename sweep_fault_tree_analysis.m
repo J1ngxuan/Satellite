@@ -11,6 +11,9 @@ function results = sweep_fault_tree_analysis(P, opts)
 %   - wheel states: no failure, any one wheel failed, any two wheels failed
 %   - thruster states: nominal, any two degraded to 40%, any two failed
 %   - burn directions: +X, +Y, +Z
+% If a failed thruster set cannot realize a requested body-frame burn
+% direction, the combined simulation may first slew to a reachable body
+% direction and then execute the same inertial delta-v.
 
 if nargin < 2 || isempty(opts)
     opts = struct();
@@ -20,6 +23,8 @@ opts = local_default(opts, 'dt', 0.5);
 opts = local_default(opts, 'T_end', 60);
 opts = local_default(opts, 'T_burn', 40);
 opts = local_default(opts, 'dv_dirs', eye(3));
+opts = local_default(opts, 'attitude_first_orbit', true);
+opts = local_default(opts, 'attitude_maneuver_s', 20);
 opts = local_default(opts, 'keep_timeseries', false);
 opts = local_default(opts, 'seed', 20260427);
 opts = local_default(opts, 'max_thruster_pairs_per_type', Inf);
@@ -48,6 +53,8 @@ for iw = 1:numel(wheel_cases)
             sim_opts.dt = opts.dt;
             sim_opts.T_end = opts.T_end;
             sim_opts.T_burn = opts.T_burn;
+            sim_opts.attitude_first_orbit = opts.attitude_first_orbit;
+            sim_opts.attitude_maneuver_s = opts.attitude_maneuver_s;
 
             sim = sim_combined_fault(P, sim_opts);
 
@@ -68,6 +75,9 @@ for iw = 1:numel(wheel_cases)
             results(row).steady_max_deg = sim.steady_max_deg;
             results(row).dv_error_rel = sim.dv_error_rel;
             results(row).assist_used = sim.assist_used;
+            results(row).attitude_first_used = sim.attitude_first_used;
+            results(row).burn_dir_body = sim.burn_dir_body;
+            results(row).retarget_feasible = sim.retarget_feasible;
             results(row).wheel_sat_frac = sim.wheel_sat_frac;
             results(row).thruster_sat_frac = sim.thruster_sat_frac;
             results(row).thruster_feasible_frac = sim.thruster_feasible_frac;
@@ -192,6 +202,9 @@ r = struct('case_id', NaN, ...
            'steady_max_deg', NaN, ...
            'dv_error_rel', NaN, ...
            'assist_used', false, ...
+           'attitude_first_used', false, ...
+           'burn_dir_body', [NaN; NaN; NaN], ...
+           'retarget_feasible', false, ...
            'wheel_sat_frac', NaN, ...
            'thruster_sat_frac', NaN, ...
            'thruster_feasible_frac', NaN, ...

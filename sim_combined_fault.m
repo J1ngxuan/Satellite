@@ -17,6 +17,11 @@ function out = sim_combined_fault(P, opts)
 %   .T_burn            maneuver burn duration [s], default 40
 %   .T_end             simulation duration [s], default 80
 %   .dv_target_mag     target delta-v magnitude [m/s], default 0.3
+%   .attitude_first_orbit true enables attitude retargeting when the
+%                       requested body direction is unavailable after
+%                       thruster faults, default true
+%   .attitude_maneuver_s fixed pre-burn attitude maneuver time [s],
+%                       default 20
 %   .att_threshold_deg attitude failure threshold, default 0.1
 %   .dv_threshold_rel  delta-v relative error threshold, default 0.05
 %
@@ -37,6 +42,9 @@ opts = local_default(opts, 'dt', 0.1);
 opts = local_default(opts, 'T_burn', 40);
 opts = local_default(opts, 'T_end', 80);
 opts = local_default(opts, 'dv_target_mag', 0.3);
+opts = local_default(opts, 'attitude_first_orbit', true);
+opts = local_default(opts, 'attitude_maneuver_s', 20);
+opts = local_default(opts, 'retarget_force_tol', 0.05);
 opts = local_default(opts, 'att_threshold_deg', 0.1);
 opts = local_default(opts, 'dv_threshold_rel', 0.05);
 opts = local_default(opts, 'sat_window_s', 20);
@@ -66,13 +74,26 @@ t = (0:num_steps-1).' * dt;
 dv_target_mag = opts.dv_target_mag;
 acc_cmd_mag = dv_target_mag / T_burn;
 F_cmd_mag = P.mass * acc_cmd_mag;
+dv_dir_inertial = dv_dir_body;
+
+burn_dir_body = dv_dir_body;
+attitude_first_used = false;
+retarget_feasible = true;
+retarget_force_rel = 0;
+if opts.attitude_first_orbit
+    [burn_dir_body, attitude_first_used, retarget_feasible, retarget_force_rel] = ...
+        local_select_burn_direction(P, thruster_health, thruster_scale, ...
+        F_cmd_mag, dv_dir_body, opts.retarget_force_tol);
+end
+q_cmd_burn = local_quat_from_two_vectors(burn_dir_body, dv_dir_inertial);
+burn_start_s = double(attitude_first_used) * opts.attitude_maneuver_s;
+burn_stop_s = burn_start_s + T_burn;
 
 % Use the wheel-failure initial condition so the combined case evaluates
 % attitude recovery as well as burn-time disturbance rejection.
 q = [cos(deg2rad(2.5)); 0; 0; sin(deg2rad(2.5))];
 w = deg2rad([0.3; -0.2; 0.1]);
-q_cmd = [1; 0; 0; 0];
-dv_acc = zeros(3, 1);
+dv_acc = zeros(3, 1);          % accumulated inertial-frame delta-v
 wheel_axes = P.wheel.axes;
 wheel_axes(:, ~wheel_health) = 0;
 wheel_rank_loss = rank(wheel_axes, 1e-6) < 3;
@@ -91,12 +112,13 @@ res_force_log = zeros(1, num_steps);
 res_torque_log = zeros(1, num_steps);
 
 for k = 1:num_steps
+    q_cmd = q_cmd_burn;
     [qm, wm] = sensor_model(q, w, P.sensor);
     qe = qmult(qinv(q_cmd), qm);
     we = wm;
 
-    if t(k) < T_burn
-        F_body_cmd = F_cmd_mag * dv_dir_body;
+    if t(k) >= burn_start_s && t(k) < burn_stop_s
+        F_body_cmd = F_cmd_mag * burn_dir_body;
     else
         F_body_cmd = zeros(3, 1);
     end
@@ -126,12 +148,13 @@ for k = 1:num_steps
 
     Td = 1e-5 * [sin(0.01 * t(k)); cos(0.01 * t(k)); 0.2];
     [q, w] = attitude_dynamics(q, w, Tw_body + Tb_thr, Td, P.J, P.Jinv, dt);
-    dv_acc = dv_acc + (Fb / P.mass) * dt;
+    dv_acc = dv_acc + (local_quat_to_dcm(q) * Fb / P.mass) * dt;
 
     Fmax_eff = P.thr.Fmax * thruster_scale(:) .* double(thruster_health(:));
     q_log(:, k) = q;
     w_log(:, k) = w;
-    err_log(k) = 2 * acos(min(1, abs(q(1)))) * 180 / pi;
+    qe_true = qmult(qinv(q_cmd), q);
+    err_log(k) = 2 * acos(min(1, abs(qe_true(1)))) * 180 / pi;
     F_hist(:, k) = F;
     Tw_hist(:, k) = Tw;
     dv_log(:, k) = dv_acc;
@@ -153,7 +176,7 @@ end
 steady_mean_deg = mean(err_log(idx_final));
 steady_max_deg = max(err_log(idx_final));
 prev_mean_deg = mean(err_log(idx_prev));
-dv_error_rel = norm(dv_acc - dv_target_mag * dv_dir_body) / max(dv_target_mag, eps);
+dv_error_rel = norm(dv_acc - dv_target_mag * dv_dir_inertial) / max(dv_target_mag, eps);
 wheel_sat_frac = mean(wheel_sat_log(idx_final));
 thruster_sat_frac = mean(thr_sat_log(idx_final));
 err_not_converged = steady_mean_deg > 0.95 * max(prev_mean_deg, eps);
@@ -170,7 +193,14 @@ out.err_deg = err_log;
 out.F_hist = F_hist;
 out.Tw_hist = Tw_hist;
 out.dv_achieved = dv_log;
-out.dv_target = dv_target_mag * dv_dir_body;
+out.dv_target = dv_target_mag * dv_dir_inertial;
+out.dv_dir_inertial = dv_dir_inertial;
+out.burn_dir_body = burn_dir_body;
+out.q_cmd_burn = q_cmd_burn;
+out.burn_start_s = burn_start_s;
+out.attitude_first_used = attitude_first_used;
+out.retarget_feasible = retarget_feasible;
+out.retarget_force_rel = retarget_force_rel;
 out.mode = mode_log;
 out.wheel_health = wheel_health;
 out.thruster_health = thruster_health;
@@ -219,6 +249,125 @@ v = qe(2:4);
 if qe(1) < 0
     v = -v;
 end
+end
+
+% -------------------------------------------------------------------------
+function [burn_dir_body, retargeted, feasible, force_rel] = ...
+    local_select_burn_direction(P, health, scale, F_cmd_mag, target_dir_body, force_tol)
+target_dir_body = target_dir_body(:) / norm(target_dir_body);
+
+[~, Fb_direct] = thruster_ft_allocation(F_cmd_mag * target_dir_body, ...
+    zeros(3, 1), P, health, scale);
+direct_force_rel = norm(Fb_direct - F_cmd_mag * target_dir_body) / ...
+    max(F_cmd_mag, eps);
+if direct_force_rel <= force_tol
+    burn_dir_body = target_dir_body;
+    retargeted = false;
+    feasible = true;
+    force_rel = direct_force_rel;
+    return;
+end
+
+active = logical(health(:).') & scale(:).' > 0;
+candidates = target_dir_body;
+dirs = P.thr.dirs(:, active);
+for i = 1:size(dirs, 2)
+    u = dirs(:, i);
+    if norm(u) > eps
+        candidates(:, end+1) = u / norm(u); %#ok<AGROW>
+    end
+end
+candidates = local_unique_dirs(candidates);
+
+best_idx = 1;
+best_score = [Inf Inf Inf];
+force_rel_values = Inf(1, size(candidates, 2));
+for i = 1:size(candidates, 2)
+    u = candidates(:, i);
+    [~, Fb, Tb] = thruster_ft_allocation(F_cmd_mag * u, zeros(3, 1), ...
+        P, health, scale);
+    f_rel = norm(Fb - F_cmd_mag * u) / max(F_cmd_mag, eps);
+    force_rel_values(i) = f_rel;
+    angle_cost = acos(max(-1, min(1, dot(u, target_dir_body))));
+    score = [double(f_rel > force_tol), angle_cost, norm(Tb)];
+    if local_score_lt(score, best_score)
+        best_score = score;
+        best_idx = i;
+    end
+end
+
+burn_dir_body = candidates(:, best_idx);
+force_rel = force_rel_values(best_idx);
+feasible = force_rel <= force_tol;
+retargeted = feasible && norm(cross(burn_dir_body, target_dir_body)) > 1e-6;
+if ~feasible
+    burn_dir_body = target_dir_body;
+    retargeted = false;
+end
+end
+
+% -------------------------------------------------------------------------
+function dirs = local_unique_dirs(dirs)
+keep = true(1, size(dirs, 2));
+for i = 1:size(dirs, 2)
+    if ~keep(i)
+        continue;
+    end
+    dirs(:, i) = dirs(:, i) / norm(dirs(:, i));
+    for j = i+1:size(dirs, 2)
+        if norm(dirs(:, i) - dirs(:, j) / norm(dirs(:, j))) < 1e-9
+            keep(j) = false;
+        end
+    end
+end
+dirs = dirs(:, keep);
+end
+
+% -------------------------------------------------------------------------
+function tf = local_score_lt(a, b)
+tol = 1e-12;
+tf = false;
+for i = 1:numel(a)
+    if a(i) < b(i) - tol
+        tf = true;
+        return;
+    elseif a(i) > b(i) + tol
+        return;
+    end
+end
+end
+
+% -------------------------------------------------------------------------
+function q = local_quat_from_two_vectors(a, b)
+a = a(:) / norm(a);
+b = b(:) / norm(b);
+c = max(-1, min(1, dot(a, b)));
+if c > 1 - 1e-12
+    q = [1; 0; 0; 0];
+elseif c < -1 + 1e-12
+    axis = cross(a, [1; 0; 0]);
+    if norm(axis) < 1e-9
+        axis = cross(a, [0; 1; 0]);
+    end
+    axis = axis / norm(axis);
+    q = [0; axis];
+else
+    axis = cross(a, b);
+    q = [1 + c; axis];
+    q = q / norm(q);
+end
+end
+
+% -------------------------------------------------------------------------
+function R = local_quat_to_dcm(q)
+q = q(:) / norm(q);
+s = q(1);
+x = q(2);
+y = q(3);
+z = q(4);
+R = [1 - 2*(y*y + z*z), 2*(x*y - s*z),     2*(x*z + s*y);
+     2*(x*y + s*z),     1 - 2*(x*x + z*z), 2*(y*z - s*x);
+     2*(x*z - s*y),     2*(y*z + s*x),     1 - 2*(x*x + y*y)];
 end
 
 % -------------------------------------------------------------------------
