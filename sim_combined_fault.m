@@ -111,8 +111,9 @@ for k = 1:num_steps
             wheel_health, Tb_force);
 
         T_pd = -P.ctrl.Kp_att * sign_q(qe) - P.ctrl.Kd_att * we;
-        T_thr_des = T_pd - (Tw_body + Tb_force);
-        T_thr_des = max(min(T_thr_des, 0.05), -0.05);
+        T_thr_delta = T_pd - (Tw_body + Tb_force);
+        T_thr_delta = max(min(T_thr_delta, 0.05), -0.05);
+        T_thr_des = Tb_force + T_thr_delta;
         [F, Fb, Tb_thr, info_thr] = thruster_ft_allocation(F_body_cmd, ...
             T_thr_des, P, thruster_health, thruster_scale);
     else
