@@ -121,6 +121,12 @@ plot(res_fail.t, res_fail.F_hist','LineWidth',1.0);
 grid on; ylabel('Thrust per nozzle [N]'); xlabel('Time [s]');
 title(sprintf('Thrust commands (failure case, dead = %s)', mat2str(fail_list)));
 
+% ---------- (5) Combined fault-tree sweep ------------------------------
+fprintf('\n--- Fault Tree / Combined Fault Sweep ---\n');
+res_fault_tree = sweep_fault_tree_analysis(P);
+print_fault_tree_summary(res_fault_tree);
+plot_fault_tree_summary(res_fault_tree);
+
 fprintf('\nAll simulations finished. Figures opened.\n');
 end
 
@@ -173,6 +179,86 @@ for i = 1:num_cases
         if assist(i,j)
             text(i + (j-2)*0.22, means(i,j), ' *', ...
                 'HorizontalAlignment', 'center', 'VerticalAlignment', 'bottom');
+        end
+    end
+end
+end
+
+function print_fault_tree_summary(results)
+num_cases = numel(results);
+top = [results.top_event];
+att = [results.attitude_fail];
+orb = [results.orbit_fail];
+coop = [results.co_control_fail];
+assist = [results.assist_used];
+
+fprintf('Fault-tree cases: %d | top events: %d (%.1f%%)\n', ...
+    num_cases, nnz(top), 100*mean(top));
+fprintf('  branches: attitude=%d, orbit=%d, co-control=%d | thruster assist used=%d\n', ...
+    nnz(att), nnz(orb), nnz(coop), nnz(assist));
+
+fprintf('%-7s %-8s %8s %8s %9s %8s %s\n', ...
+    'WheelN', 'ThrMode', 'Cases', 'Top[%]', 'AttMax', 'DvMax[%]', 'Assist[%]');
+orders = unique([results.wheel_fault_order]);
+types = {'nominal', 'degrade', 'failure'};
+for i = 1:numel(orders)
+    for j = 1:numel(types)
+        mask = [results.wheel_fault_order] == orders(i) & ...
+            strcmp({results.thruster_fault_type}, types{j});
+        if ~any(mask)
+            continue;
+        end
+        subset = results(mask);
+        fprintf('%-7d %-8s %8d %8.1f %9.4f %8.2f %8.1f\n', ...
+            orders(i), types{j}, numel(subset), ...
+            100*mean([subset.top_event]), max([subset.steady_mean_deg]), ...
+            100*max([subset.dv_error_rel]), 100*mean([subset.assist_used]));
+    end
+end
+end
+
+function plot_fault_tree_summary(results)
+[rate, att_max, row_labels, col_labels] = fault_tree_matrix(results);
+
+figure('Name','Fault Tree Combined Fault Sweep','Color','w');
+subplot(1,2,1);
+imagesc(rate);
+axis tight;
+colorbar;
+clim([0 100]);
+set(gca, 'XTick', 1:numel(col_labels), 'XTickLabel', col_labels, ...
+    'YTick', 1:numel(row_labels), 'YTickLabel', row_labels);
+xlabel('Thruster fault mode');
+ylabel('Wheel fault case');
+title('Top-event rate [%]');
+
+subplot(1,2,2);
+imagesc(att_max);
+axis tight;
+colorbar;
+set(gca, 'XTick', 1:numel(col_labels), 'XTickLabel', col_labels, ...
+    'YTick', 1:numel(row_labels), 'YTickLabel', row_labels);
+xlabel('Thruster fault mode');
+title('Max final-20-s mean attitude error [deg]');
+end
+
+function [rate, att_max, row_labels, col_labels] = fault_tree_matrix(results)
+row_labels = unique({results.wheel_case}, 'stable');
+col_labels = {'nominal', 'degrade', 'failure'};
+rate = zeros(numel(row_labels), numel(col_labels));
+att_max = zeros(numel(row_labels), numel(col_labels));
+
+for i = 1:numel(row_labels)
+    for j = 1:numel(col_labels)
+        mask = strcmp({results.wheel_case}, row_labels{i}) & ...
+            strcmp({results.thruster_fault_type}, col_labels{j});
+        subset = results(mask);
+        if isempty(subset)
+            rate(i,j) = NaN;
+            att_max(i,j) = NaN;
+        else
+            rate(i,j) = 100 * mean([subset.top_event]);
+            att_max(i,j) = max([subset.steady_mean_deg]);
         end
     end
 end

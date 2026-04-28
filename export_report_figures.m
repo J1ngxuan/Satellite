@@ -11,6 +11,7 @@ function export_report_figures()
 %   ./figures/double_wheel_strategy_sweep.png
 %   ./figures/thruster_faults.png
 %   ./figures/thruster_failure_feedforward_compare.png
+%   ./figures/fault_tree_combined_sweep.png
 
 clc;
 close all;
@@ -67,6 +68,10 @@ rng(1234);
 res_fail_noff = sim_thruster_fault_variant(P, 'failure', fail_list, [1; 0; 0], false);
 export_feedforward_compare_figure(res_fail_ff, res_fail_noff, ...
     fullfile(outdir, 'thruster_failure_feedforward_compare.png'));
+
+res_fault_tree = sweep_fault_tree_analysis(P);
+export_fault_tree_figure(res_fault_tree, ...
+    fullfile(outdir, 'fault_tree_combined_sweep.png'));
 
 fprintf('Exported report figures to %s\n', outdir);
 end
@@ -294,6 +299,61 @@ title('Body-rate response under total thruster failure');
 
 exportgraphics(fig, outfile, 'Resolution', 300);
 close(fig);
+end
+
+% -------------------------------------------------------------------------
+function export_fault_tree_figure(results, outfile)
+[rate, att_max, row_labels, col_labels] = fault_tree_matrix(results);
+
+fig = figure('Color', 'w', 'Visible', 'off', 'Position', [100 100 1100 760]);
+
+subplot(1, 2, 1);
+imagesc(rate);
+axis tight;
+colorbar;
+clim([0 100]);
+set(gca, 'XTick', 1:numel(col_labels), 'XTickLabel', col_labels, ...
+    'YTick', 1:numel(row_labels), 'YTickLabel', row_labels, ...
+    'TickLabelInterpreter', 'none');
+xlabel('Thruster fault mode');
+ylabel('Wheel fault case');
+title('Fault-tree top-event rate [%]');
+
+subplot(1, 2, 2);
+imagesc(att_max);
+axis tight;
+colorbar;
+set(gca, 'XTick', 1:numel(col_labels), 'XTickLabel', col_labels, ...
+    'YTick', 1:numel(row_labels), 'YTickLabel', row_labels, ...
+    'TickLabelInterpreter', 'none');
+xlabel('Thruster fault mode');
+title('Max final-20-s mean attitude error [deg]');
+
+exportgraphics(fig, outfile, 'Resolution', 300);
+close(fig);
+end
+
+% -------------------------------------------------------------------------
+function [rate, att_max, row_labels, col_labels] = fault_tree_matrix(results)
+row_labels = unique({results.wheel_case}, 'stable');
+col_labels = {'nominal', 'degrade', 'failure'};
+rate = zeros(numel(row_labels), numel(col_labels));
+att_max = zeros(numel(row_labels), numel(col_labels));
+
+for i = 1:numel(row_labels)
+    for j = 1:numel(col_labels)
+        mask = strcmp({results.wheel_case}, row_labels{i}) & ...
+            strcmp({results.thruster_fault_type}, col_labels{j});
+        subset = results(mask);
+        if isempty(subset)
+            rate(i, j) = NaN;
+            att_max(i, j) = NaN;
+        else
+            rate(i, j) = 100 * mean([subset.top_event]);
+            att_max(i, j) = max([subset.steady_mean_deg]);
+        end
+    end
+end
 end
 
 % -------------------------------------------------------------------------

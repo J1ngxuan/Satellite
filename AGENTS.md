@@ -46,8 +46,10 @@ No formal test suite is currently present. Validate changes by running `main` en
 
 ## Commit & Pull Request Guidelines
 
-This checkout has no Git history available, so use concise imperative commit messages such as `Fix thruster allocation saturation` or `Regenerate report figures`. Pull requests should describe the changed scenario or model assumption, list MATLAB commands run, and include updated figures when outputs under `figures/` change.
+The repository uses `main` as the primary branch. Use concise imperative commit messages such as `Fix thruster allocation saturation` or `Regenerate report figures`. Pull requests should describe the changed scenario or model assumption, list MATLAB commands run, and include updated figures when outputs under `figures/` change.
+
+Repository text files are normalized to LF via `.gitattributes`; avoid unrelated whitespace-only churn. Keep local tool settings such as `.claude/settings.local.json` untracked. Large generated data files (`*.mat`) are ignored by default and should only be tracked deliberately when they are required as source data.
 
 ## Agent-Specific Instructions
 
-Do not tighten the relaxed thruster redundancy test or change quaternion error sign without documenting the control impact. Treat files in `figures/` as generated artifacts from `export_report_figures.m`.
+Do not tighten the relaxed thruster redundancy test or change quaternion error sign without documenting the control impact. Treat files in `figures/` as generated artifacts from `export_report_figures.m`; if figure outputs change, rerun the export script or explain why regeneration was not performed.
