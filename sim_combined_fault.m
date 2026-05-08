@@ -26,6 +26,12 @@ function out = sim_combined_fault(P, opts)
 %                       default 20
 %   .att_threshold_deg attitude failure threshold, default 0.1
 %   .dv_threshold_rel  delta-v relative error threshold, default 0.05
+%   .torque_safe_throttle true reduces burn thrust when the induced
+%                       residual torque would saturate the available wheels
+%   .min_force_scale    minimum per-step burn scale for slow maneuvers,
+%                       default 0.2
+%   .max_wheel_torque_frac maximum allowed per-wheel torque fraction during
+%                       burn preview, default 0.7
 %
 % Output includes time histories and fault-tree summary fields.
 
@@ -50,6 +56,11 @@ opts = local_default(opts, 'retarget_force_tol', 0.05);
 opts = local_default(opts, 'att_threshold_deg', 0.1);
 opts = local_default(opts, 'dv_threshold_rel', 0.05);
 opts = local_default(opts, 'sat_window_s', 20);
+opts = local_default(opts, 'torque_safe_throttle', true);
+opts = local_default(opts, 'min_force_scale', 0.2);
+opts = local_default(opts, 'force_scale_grid', [1 0.8 0.6 0.4 0.3 0.2]);
+opts = local_default(opts, 'dv_completion_tol', 1e-3);
+opts = local_default(opts, 'max_wheel_torque_frac', 0.7);
 
 wheel_health = logical(opts.wheel_health);
 thruster_health = logical(opts.thruster_health);
@@ -87,7 +98,11 @@ if opts.attitude_first_orbit
 end
 q_cmd_burn = local_quat_from_two_vectors(burn_dir_body, dv_dir_inertial);
 burn_start_s = double(attitude_first_used) * opts.attitude_maneuver_s;
-burn_stop_s = burn_start_s + T_burn;
+if opts.torque_safe_throttle
+    burn_stop_s = burn_start_s + T_burn / max(opts.min_force_scale, eps);
+else
+    burn_stop_s = burn_start_s + T_burn;
+end
 T_end = max(T_end, burn_stop_s + opts.sat_window_s);
 num_steps = round(T_end / dt);
 t = (0:num_steps-1).' * dt;
@@ -113,6 +128,8 @@ thr_sat_log = false(1, num_steps);
 thr_feasible_log = false(1, num_steps);
 res_force_log = zeros(1, num_steps);
 res_torque_log = zeros(1, num_steps);
+force_scale_log = zeros(1, num_steps);
+burn_complete_s = NaN;
 
 for k = 1:num_steps
     q_cmd = q_cmd_burn;
@@ -120,38 +137,38 @@ for k = 1:num_steps
     qe = qmult(qinv(q_cmd), qm);
     we = wm;
 
-    if t(k) >= burn_start_s && t(k) < burn_stop_s
+    dv_along_target = dot(dv_acc, dv_dir_inertial);
+    burn_active = t(k) >= burn_start_s && t(k) < burn_stop_s && ...
+        dv_along_target < dv_target_mag * (1 - opts.dv_completion_tol);
+    if burn_active
         F_body_cmd = F_cmd_mag * burn_dir_body;
     else
         F_body_cmd = zeros(3, 1);
     end
 
     assist_active = wheel_rank_loss;
-    if assist_active
-        % First allocate the requested maneuver force. The projected wheel
-        % response identifies the torque component that needs thruster assist.
-        [~, ~, Tb_force, ~] = thruster_ft_allocation(F_body_cmd, zeros(3, 1), ...
-            P, thruster_health, thruster_scale);
-        [Tw_body, ~] = wheel_attitude_controller(qe, we, P, ...
-            wheel_health, Tb_force);
-
-        T_pd = -P.ctrl.Kp_att * sign_q(qe) - P.ctrl.Kd_att * we;
-        T_thr_delta = T_pd - (Tw_body + Tb_force);
-        T_thr_delta = max(min(T_thr_delta, 0.05), -0.05);
-        T_thr_des = Tb_force + T_thr_delta;
-        [F, Fb, Tb_thr, info_thr] = thruster_ft_allocation(F_body_cmd, ...
-            T_thr_des, P, thruster_health, thruster_scale);
+    force_scale = 1;
+    if opts.torque_safe_throttle && burn_active
+        [F_body_cmd, F, Fb, Tb_thr, info_thr, Tw_body, Tw, info_wheel, force_scale] = ...
+            local_allocate_with_torque_margin(F_body_cmd, qe, we, P, ...
+            wheel_health, thruster_health, thruster_scale, assist_active, ...
+            opts.force_scale_grid, opts.min_force_scale, opts.max_wheel_torque_frac);
+        T_thr_des = info_thr.T_des;
     else
-        T_thr_des = zeros(3, 1);
-        [F, Fb, Tb_thr, info_thr] = thruster_ft_allocation(F_body_cmd, ...
-            T_thr_des, P, thruster_health, thruster_scale);
+        [F, Fb, Tb_thr, info_thr] = local_allocate_thruster_step(F_body_cmd, ...
+            qe, we, P, wheel_health, thruster_health, thruster_scale, assist_active);
+        T_thr_des = info_thr.T_des;
+        [Tw_body, Tw, info_wheel] = wheel_attitude_controller(qe, we, P, ...
+            wheel_health, Tb_thr);
     end
-    [Tw_body, Tw, info_wheel] = wheel_attitude_controller(qe, we, P, ...
-        wheel_health, Tb_thr);
 
     Td = 1e-5 * [sin(0.01 * t(k)); cos(0.01 * t(k)); 0.2];
     [q, w] = attitude_dynamics(q, w, Tw_body + Tb_thr, Td, P.J, P.Jinv, dt);
     dv_acc = dv_acc + (local_quat_to_dcm(q) * Fb / P.mass) * dt;
+    if burn_active && isnan(burn_complete_s) && ...
+            dot(dv_acc, dv_dir_inertial) >= dv_target_mag * (1 - opts.dv_completion_tol)
+        burn_complete_s = t(k);
+    end
 
     Fmax_eff = P.thr.Fmax * thruster_scale(:) .* double(thruster_health(:));
     q_log(:, k) = q;
@@ -168,11 +185,15 @@ for k = 1:num_steps
     thr_feasible_log(k) = info_thr.feasible;
     res_force_log(k) = norm(Fb - F_body_cmd);
     res_torque_log(k) = norm(Tb_thr - T_thr_des);
+    force_scale_log(k) = force_scale;
 end
 
 window_s = opts.sat_window_s;
-final_start_s = max(burn_stop_s, t(end) - window_s);
-idx_final = t >= final_start_s;
+if isnan(burn_complete_s)
+    burn_complete_s = burn_stop_s;
+end
+final_start_s = burn_complete_s;
+idx_final = t >= final_start_s & t < final_start_s + window_s;
 idx_prev = t >= max(0, final_start_s - window_s) & t < final_start_s;
 if ~any(idx_prev)
     idx_prev = idx_final;
@@ -203,7 +224,8 @@ out.dv_dir_inertial = dv_dir_inertial;
 out.burn_dir_body = burn_dir_body;
 out.q_cmd_burn = q_cmd_burn;
 out.burn_start_s = burn_start_s;
-out.burn_stop_s = burn_stop_s;
+out.burn_stop_s = burn_complete_s;
+out.burn_deadline_s = burn_stop_s;
 out.final_window_start_s = final_start_s;
 out.attitude_first_used = attitude_first_used;
 out.retarget_feasible = retarget_feasible;
@@ -221,6 +243,8 @@ out.thruster_sat_frac = thruster_sat_frac;
 out.thruster_feasible_frac = mean(thr_feasible_log(idx_final));
 out.residual_force_final = mean(res_force_log(idx_final));
 out.residual_torque_final = mean(res_torque_log(idx_final));
+out.force_scale = force_scale_log;
+out.min_force_scale_used = min(force_scale_log(force_scale_log > 0), [], 'omitnan');
 out.attitude_fail = attitude_fail;
 out.orbit_fail = orbit_fail;
 out.co_control_fail = co_control_fail;
@@ -233,6 +257,90 @@ function opts = local_default(opts, name, value)
 if ~isfield(opts, name) || isempty(opts.(name))
     opts.(name) = value;
 end
+end
+
+% -------------------------------------------------------------------------
+function [F_body_cmd, F, Fb, Tb_thr, info_thr, Tw_body, Tw, info_wheel, scale_used] = ...
+    local_allocate_with_torque_margin(F_body_nominal, qe, we, P, ...
+    wheel_health, thruster_health, thruster_scale, assist_active, scale_grid, min_force_scale, max_wheel_frac)
+
+min_force_scale = max(min_force_scale, eps);
+scale_grid = unique([scale_grid(:).' 1 min_force_scale], 'stable');
+scale_grid = sort(scale_grid(scale_grid >= min_force_scale & scale_grid <= 1), 'descend');
+if isempty(scale_grid)
+    scale_grid = 1;
+end
+
+best = [];
+for i = 1:numel(scale_grid)
+    scale_used = scale_grid(i);
+    F_body_cmd = scale_used * F_body_nominal;
+    [F, Fb, Tb_thr, info_thr] = local_allocate_thruster_step(F_body_cmd, ...
+        qe, we, P, wheel_health, thruster_health, thruster_scale, assist_active);
+    [Tw_body, Tw, info_wheel] = wheel_attitude_controller(qe, we, P, ...
+        wheel_health, Tb_thr);
+
+    candidate = struct('F_body_cmd', F_body_cmd, 'F', F, 'Fb', Fb, ...
+        'Tb_thr', Tb_thr, 'info_thr', info_thr, 'Tw_body', Tw_body, ...
+        'Tw', Tw, 'info_wheel', info_wheel, 'scale_used', scale_used);
+    if isempty(best) || local_allocation_score(candidate, P) < local_allocation_score(best, P)
+        best = candidate;
+    end
+    if local_wheel_margin_ok(Tw, info_wheel, P, max_wheel_frac)
+        break;
+    end
+end
+
+F_body_cmd = best.F_body_cmd;
+F = best.F;
+Fb = best.Fb;
+Tb_thr = best.Tb_thr;
+info_thr = best.info_thr;
+Tw_body = best.Tw_body;
+Tw = best.Tw;
+info_wheel = best.info_wheel;
+scale_used = best.scale_used;
+info_thr.force_scale = scale_used;
+end
+
+% -------------------------------------------------------------------------
+function score = local_allocation_score(candidate, P)
+score = double(candidate.info_wheel.saturated) * 1e3 + ...
+    max(abs(candidate.Tw)) / max(P.wheel.Tmax, eps) + ...
+    norm(candidate.Tb_thr - candidate.info_thr.T_des) + ...
+    candidate.info_thr.residual;
+end
+
+% -------------------------------------------------------------------------
+function ok = local_wheel_margin_ok(Tw, info_wheel, P, max_wheel_frac)
+if info_wheel.saturated
+    ok = false;
+    return;
+end
+ok = max(abs(Tw)) <= max_wheel_frac * P.wheel.Tmax;
+end
+
+% -------------------------------------------------------------------------
+function [F, Fb, Tb_thr, info_thr] = local_allocate_thruster_step(F_body_cmd, ...
+    qe, we, P, wheel_health, thruster_health, thruster_scale, assist_active)
+if assist_active
+    % First allocate the requested maneuver force. The projected wheel
+    % response identifies the torque component that needs thruster assist.
+    [~, ~, Tb_force, ~] = thruster_ft_allocation(F_body_cmd, zeros(3, 1), ...
+        P, thruster_health, thruster_scale);
+    [Tw_body_preview, ~] = wheel_attitude_controller(qe, we, P, ...
+        wheel_health, Tb_force);
+
+    T_pd = -P.ctrl.Kp_att * sign_q(qe) - P.ctrl.Kd_att * we;
+    T_thr_delta = T_pd - (Tw_body_preview + Tb_force);
+    T_thr_delta = max(min(T_thr_delta, 0.05), -0.05);
+    T_thr_des = Tb_force + T_thr_delta;
+else
+    T_thr_des = zeros(3, 1);
+end
+[F, Fb, Tb_thr, info_thr] = thruster_ft_allocation(F_body_cmd, ...
+    T_thr_des, P, thruster_health, thruster_scale);
+info_thr.T_des = T_thr_des;
 end
 
 % -------------------------------------------------------------------------
