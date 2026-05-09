@@ -53,9 +53,9 @@ C.name = 'C-12orth';
 C.dirs = [ +1 +1 -1 -1  0  0  0  0  0  0  0  0;
             0  0  0  0 +1 +1 -1 -1  0  0  0  0;
             0  0  0  0  0  0  0  0 +1 +1 -1 -1 ];
-C.pos  = [ -hx -hx  hx  hx  0   0   0   0   0   0   0   0;
+C.pos  = [ -hx -hx  hx  hx  0   0   0   0  hx -hx  hx -hx;
             hy -hy  hy -hy -hy -hy  hy  hy  0   0   0   0;
-            0   0   0   0  hz -hz  hz -hz -hz  hz -hz  hz];
+            0   0   0   0  hz -hz  hz -hz -hz -hz  hz  hz];
 
 % -------- Scheme E: 12 non-orthogonal omni-directional (icosahedral) ---
 % Directions = regular-icosahedron vertices (12 points on a sphere, 6

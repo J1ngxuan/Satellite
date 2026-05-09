@@ -59,8 +59,8 @@ P.sensor.gyro_sigma = deg2rad(0.01);            % 0.01 deg/s noise
 P.sensor.gyro_bias  = deg2rad(0.005)*[1;-1;1];  % bias
 
 % --- Controller defaults -------------------------------------------------
-P.ctrl.Kp_att  = 0.06*eye(3);                   % proportional
-P.ctrl.Kd_att  = 0.30*eye(3);                   % derivative
+P.ctrl.Kp_att  = 0.15*eye(3);                   % proportional
+P.ctrl.Kd_att  = 0.25*eye(3);                   % derivative
 P.ctrl.att_dead = deg2rad(0.05);                % 0.05 deg deadband
 
 % --- Environment ---------------------------------------------------------
@@ -81,7 +81,7 @@ D = [ +1 +1 -1 -1  0  0  0  0  0  0  0  0;
        0  0  0  0 +1 +1 -1 -1  0  0  0  0;
        0  0  0  0  0  0  0  0 +1 +1 -1 -1 ];
 % positions: pair on each face so cross-product torques are small
-R = [ -hx -hx  hx  hx  0   0   0   0   0   0   0   0;
+R = [ -hx -hx  hx  hx  0   0   0   0  hx -hx  hx -hx;
        hy -hy  hy -hy -hy -hy  hy  hy  0   0   0   0;
-       0   0   0   0  hz -hz  hz -hz -hz  hz -hz  hz];
+       0   0   0   0  hz -hz  hz -hz -hz -hz  hz  hz];
 end
