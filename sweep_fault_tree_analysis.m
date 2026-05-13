@@ -7,7 +7,11 @@ function results = sweep_fault_tree_analysis(P, opts)
 %   2) orbit maneuver failure: final delta-v relative error > 5%
 %   3) unrecovered co-control: long saturation and non-converging attitude
 %
-% The default sweep covers:
+% The daily default sweep covers a representative subset of thruster pairs
+% so main/export remain practical with online diagnosis enabled. Set
+% opts.max_thruster_pairs_per_type = Inf for the full matrix.
+%
+% The full sweep covers:
 %   - wheel states: no failure, any one wheel failed, any two wheels failed
 %   - thruster states: nominal, any two degraded to 40%, any two failed
 %   - burn directions: +X, +Y, +Z
@@ -27,7 +31,9 @@ opts = local_default(opts, 'attitude_first_orbit', true);
 opts = local_default(opts, 'attitude_maneuver_s', 20);
 opts = local_default(opts, 'keep_timeseries', false);
 opts = local_default(opts, 'seed', 20260427);
-opts = local_default(opts, 'max_thruster_pairs_per_type', Inf);
+opts = local_default(opts, 'max_thruster_pairs_per_type', 6);
+opts = local_default(opts, 'use_diagnosis', true);
+opts = local_default(opts, 'fault_time_s', 1.5);
 
 wheel_cases = local_wheel_cases(P.wheel.N);
 thruster_cases = local_thruster_cases(P.thr.M, opts.max_thruster_pairs_per_type);
@@ -55,6 +61,8 @@ for iw = 1:numel(wheel_cases)
             sim_opts.T_burn = opts.T_burn;
             sim_opts.attitude_first_orbit = opts.attitude_first_orbit;
             sim_opts.attitude_maneuver_s = opts.attitude_maneuver_s;
+            sim_opts.use_diagnosis = opts.use_diagnosis;
+            sim_opts.fault_time_s = opts.fault_time_s;
 
             sim = sim_combined_fault(P, sim_opts);
 

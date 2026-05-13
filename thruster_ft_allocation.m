@@ -10,29 +10,30 @@ function [F, Fbody, Tbody, info] = thruster_ft_allocation(F_des, T_des, P, healt
 %            controller for stabilisation)
 %   P      : satellite param struct (uses P.thr.dirs, P.thr.pos, P.thr.Fmax)
 %   health : 1xM logical (true = thruster operable)
-%   scale  : 1xM in (0,1] thrust scale per thruster (1 = nominal,
-%            <1 = degraded). Combined with health.
+%   scale  : 1xM estimated thrust effectiveness per thruster (1 = nominal,
+%            <1 = degraded). Combined with health in the prediction model.
 %
 % Outputs:
-%   F      : Mx1 commanded per-thruster thrust [N], 0..Fmax_eff
-%   Fbody  : 3x1 actual delivered force on body [N]
-%   Tbody  : 3x1 actual delivered torque on body [Nm]
+%   F      : Mx1 commanded nominal per-thruster thrust [N], 0..Fmax
+%   Fbody  : 3x1 predicted delivered force on body [N]
+%   Tbody  : 3x1 predicted delivered torque on body [Nm]
 %   info   : struct .feasible, .residual, .nfire
 %
 % Allocation: solve  min || A F - b ||^2 + lambda*||F||^2
-%             s.t.   0 <= F_i <= Fmax_eff_i
+%             s.t.   0 <= F_i <= Fmax_i
 % where A=[dirs; cross(pos,dirs)], b=[F_des; T_des].
 % We use lsqnonneg by augmenting with a damping term.
 
 M = P.thr.M;
 if nargin<4 || isempty(health), health = true(1,M); end
 if nargin<5 || isempty(scale),  scale  = ones(1,M);  end
-Fmax_eff = P.thr.Fmax * scale .* double(health);
+eff = scale(:).' .* double(health(:).');
+Fmax_cmd = P.thr.Fmax * double(health(:).');
 
 A_force  = P.thr.dirs;
 A_torque = cross(P.thr.pos, P.thr.dirs, 1);
-A = [A_force; A_torque];
-% Zero-out failed columns
+A = [A_force; A_torque] * diag(eff);
+% Zero-out failed columns and non-positive effectiveness estimates.
 A(:, ~health | scale<=0) = 0;
 
 b = [F_des(:); T_des(:)];
@@ -45,11 +46,12 @@ warn_s = warning('off','MATLAB:lsqnonneg:IterationCountExceeded');
 F = lsqnonneg(Aaug, baug);
 warning(warn_s);
 
-% Saturate at max effective thrust
-F = min(F, Fmax_eff(:));
+% Saturate at max commanded thrust. Effectiveness is already in A.
+F = min(F, Fmax_cmd(:));
 
-Fbody = A_force * F;
-Tbody = A_torque * F;
+F_eff = eff(:) .* F;
+Fbody = A_force * F_eff;
+Tbody = A_torque * F_eff;
 
 info.residual = norm([Fbody;Tbody] - b);
 info.feasible = info.residual < 0.05*max(norm(b),1e-3) || norm(b)<1e-9;

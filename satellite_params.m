@@ -22,6 +22,9 @@ function P = satellite_params()
 %       .star_sigma : 1-sigma star-tracker attitude noise [rad]
 %       .gyro_sigma : 1-sigma gyro angular-rate noise [rad/s]
 %       .gyro_bias  : 3x1 constant gyro bias [rad/s]
+%       .accel_sigma: 1-sigma accelerometer noise [m/s^2]
+%       .accel_bias : 3x1 constant accelerometer bias [m/s^2]
+%   P.diag        : actuator fault diagnosis defaults
 %   P.ctrl        : controller defaults (gains, deadbands)
 %       .Kp_att     : proportional gain matrix attitude
 %       .Kd_att     : derivative gain matrix attitude
@@ -57,6 +60,18 @@ P.thr.M    = size(P.thr.dirs,2);
 P.sensor.star_sigma = deg2rad(5/3600);          % 5 arcsec
 P.sensor.gyro_sigma = deg2rad(0.01);            % 0.01 deg/s noise
 P.sensor.gyro_bias  = deg2rad(0.005)*[1;-1;1];  % bias
+P.sensor.accel_sigma = 2e-4;                    % [m/s^2] accelerometer noise
+P.sensor.accel_bias  = 5e-5*[1;-1;1];           % [m/s^2] bias
+
+% --- Fault diagnosis defaults -------------------------------------------
+P.diag.start_ignore_s = 1.0;                    % ignore startup residuals
+P.diag.res_torque_threshold = 0.01;             % [Nm]
+P.diag.res_force_threshold = 0.03;              % [N]
+P.diag.wheel_binary_threshold = 0.5;            % gamma -> health
+P.diag.thruster_health_threshold = 0.1;         % gamma -> usable nozzle
+P.diag.gamma_max = 1.2;                         % allow modest estimator overshoot
+P.diag.filter_omega_n = 8;                      % [rad/s] stable at dt=0.1
+P.diag.filter_zeta = 0.9;
 
 % --- Controller defaults -------------------------------------------------
 P.ctrl.Kp_att  = 0.15*eye(3);                   % proportional

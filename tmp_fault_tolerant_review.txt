@@ -1,0 +1,1273 @@
+                                                                 Progress in Aerospace Sciences 130 (2022) 100806
+
+
+                                                                     Contents lists available at ScienceDirect
+
+
+                                                             Progress in Aerospace Sciences
+                                                          journal homepage: www.elsevier.com/locate/paerosci
+
+
+
+
+Fault-tolerant spacecraft attitude control: A critical assessment
+Muhammad Noman Hasan a ,∗, Muhammad Haris a , Shiyin Qin a,b
+a
+    School of Automation Science and Electrical Engineering, Beihang University, Beijing, China
+b
+    School of Electrical Engineering and Intelligentization, Dongguan University of Technology, Dongguan, 523808, Guangdong Province, China
+
+
+
+ARTICLE                  INFO                               ABSTRACT
+
+Keywords:                                                   Given the few unsuccessful space missions in the past few decades, designing a fault-tolerant spacecraft’s
+Fault-tolerant control (FTC)                                attitude control has piqued the scientific and academic community’s attention. In recent years, fault-tolerant
+Attitude control system                                     control (FTC) emerged as a prominent control strategy to ensure the reliability and safety of modern systems.
+Spacecraft
+                                                            This paper critically assesses various theoretical and practical design approaches to achieve the desired level of
+Actuator faults
+                                                            fault-tolerance for the spacecraft’s attitude control. First, a run-through on the conventional FTC methodology
+Reliable control
+Review and prospect
+                                                            for spacecraft’s attitude control is briefly presented, highlighting the shortcomings. Then, the need for an
+                                                            autonomous FTC for present and future space missions is established. More critically, a detailed review of the
+                                                            latest developments in spacecraft’s fault-tolerant attitude control is discussed from two perspectives: controller-
+                                                            basis design techniques and various controller performance characteristics. Finally, several key challenges and
+                                                            open research areas in designing a practical and reliable spacecraft’s fault-tolerant attitude control and the
+                                                            window for future research prospects are discussed.
+
+
+
+1. Introduction                                                                                  loss and possibly posing a danger to the environment, safety, and
+                                                                                                 sustainability of space. It is usually impossible to alter, repair or change
+    Advances in space systems have advanced rapidly over the last                                the spacecraft’s components once it is launched. This has led to the
+two decades. The US, China, and European countries devote a large                                development of such attitude control systems that fortify an effective
+budget to achieve their space objectives and missions. Today, space                              and timely response to maintain stability, reliability, and required
+applications are restricted to communications, forecasting, surveillance,                        performance characteristics, even when its components malfunction.
+etc., yet people are also interested in exploring space. The latest space
+                                                                                                 This is accomplished by an eminent control approach known as Fault
+missions are far more complicated, and they need state-of-the-art tech-
+                                                                                                 Tolerant Control (FTC).
+nology to accomplish these missions. For instance, one such mission
+                                                                                                     Unlike most traditional control systems, where the controllers are
+is China’s recent Chang’e-5 (shown in Fig. 1) mission, which has
+successfully collected and brought soil samples from the moon’s far                              designed for fault-free cases without considering the probability of
+side. Such missions involve autonomous cooperation among different                               fault occurrence, the key characteristics of FTC-developed systems are
+mission stages, and, more importantly, essential efforts are made to                             that they can ensure desirable stability and performance characteristics
+ensure the overall mission’s reliability. This has increased the need for                        even if the spacecraft is experiencing a fault. This control feature is
+reliable and autonomous control in recent years. Space applications                              desirable to ensure reliability and safety because any minor fault may
+such as communication, earth monitoring, surveillance, space object                              lead to a disastrous situation or complete failure of the spacecraft
+capture, formation flying, etc., require attitude maneuver, control,                             system. Therefore, the demand for fault tolerance, safety, and reliability
+and tracking as a fundamental requirement to accomplish their mis-                               are generally very high. Building an FTC-capable control system is
+sion [1]. The spacecraft’s subsystem responsible for this attitude control                       necessary to increase reliability while delivering desirable performance
+is the Attitude Control Subsystem (ACS). The attitude control is usu-                            characteristics and tolerating possible faults. Such control systems are
+ally attained with actuators such as reaction wheels or thrusters. The                           fault-tolerant control systems (FTCS) [3].
+spacecraft has to survive and operate in a space environment always
+                                                                                                     Significant research at FTC or FTCS has been driven over the last
+coupled with uncertainties and disturbances posing a severe threat to
+                                                                                                 three decades due to increased demand for reliability, sustainability,
+the overall mission’s reliability. Thus, in the case of any malfunction
+                                                                                                 and safety in spacecraft systems. An excellent overview of FTC was
+in the spacecraft’s controller, actuators, or sensors, its performance
+substantially degrades and could fail, causing considerable economic                             given in the survey papers by Yin et al. [3], Amin et al. [4], Blanke
+
+
+     ∗    Correspondence to: Department of Intelligent System and Control, School of Automation Science and Electrical Engineering, Beihang University, China.
+         E-mail address: noman@buaa.edu.cn (M.N. Hasan).
+
+https://doi.org/10.1016/j.paerosci.2022.100806
+Received 11 August 2021; Received in revised form 28 December 2021; Accepted 15 January 2022
+Available online 9 February 2022
+0376-0421/© 2022 Elsevier Ltd. All rights reserved.
+M.N. Hasan et al.                                                                                                         Progress in Aerospace Sciences 130 (2022) 100806
+
+
+
+
+                                        Fig. 1. Chang’e-5 lander and ascender after landing on the moon. Image courtesy [2].
+
+
+
+
+                                                  Fig. 2. General layout of a passive fault-tolerant control system.
+
+
+et al. [5] and Zhang et al. [6]. Generally speaking, the latest FTC                   limitations mentioned above associated with passive FTC. When a fault
+modeling strategies can be divided into two major categories: active                  occurs, the active FTC generally needs a fault detection and identifica-
+FTC and passive FTC. In the passive FTC, the controller is generally                  tion (FDI) mechanism [7–9] to furbish the most up-to-date information
+implemented to withstand or tackle a limited number of faults. More                   about the fault’s occurrence and nature. The terms FDI and fault-
+specifically, it can only account for those faults that are believed to               detection and diagnosis (FDD) are frequently used interchangeably in
+be known before designing a controller. So, any real-time information                 the literature. The FDI module further comprises fault-detection, fault-
+or knowledge of the fault is not needed. Due to the fixed nature of                   isolation, and fault-estimation modules. The fault detection module
+the controller, the passive FTC is simple and easily realizable, and all              detects the occurrence of a fault, the fault-isolation module determines
+the predicted faults at the design stage can be tackled by it. A general              the pin-point location of the fault, and the fault-estimation module
+layout of a passive FTC is shown in Fig. 2. Though the Passive FTC has                estimates the effect and magnitude of fault using observers or various
+limited potential for fault tolerance, it is highly robust to predetermined           estimation techniques [10,11]. Based on the information from the FDI,
+                                                                                      the reconfigurable controller takes corrective measures in real-time,
+and anticipated faults. It usually utilizes the redundancy of hardware
+                                                                                      either by synthesizing a new control law or choosing a control law from
+such as various actuators and sensors. However, it is more conservative
+                                                                                      the list of already calculated control laws. The reconfiguration mecha-
+as it is only possible to achieve robustness to specific faults at a reduced
+                                                                                      nism decides when to switch in the reconfigured controller to tackle
+desired nominal performance. The characteristics of passive FTC can be
+                                                                                      the faulty situation. The term active is devised because the control
+summarized as [3]:
+                                                                                      scheme takes self-corrective measures when the fault occurs. However,
+                                                                                      its performance solely depends on the information from the FDI unit.
+    • A single fixed controller both for regular and faulty cases.
+                                                                                      So, an active FTC requires continuously processing a notable amount
+    • Its architecture is simple and highly robust against predetermined
+                                                                                      of FDI data to make decisions online in real-time and reconfigure
+      or known faults.
+                                                                                      the controller to accommodate faults. However, it may accept some
+    • Quick in catering to the pre-considered faults without any delay.
+                                                                                      degradation in the controller’s overall performance when the fault has
+    • Fault tolerance is achieved at the cost of degradation in nominal               occurred and is not yet identified. The general characteristics of active
+      performance.                                                                    FTC can be summarized as:
+    It is significant to mention that, due to physical or cost restrictions,              • Based on the information from the FDI algorithm, it reconfigures
+most of the practical systems to be controlled have a limited physical                      the controller.
+redundancy. This can restrict the usage of the passive FTC to control                     • It reduces the overall conservativeness by addressing (even the
+such systems. On the other hand, an active FTC can be designed                              un-modeled) faults in real-time.
+and implemented using available resources, employing analytical and                       • It takes some time to detect and identify the fault and reconfigures
+physical redundancies to handle unpredicted faults. A general layout                        the controller to tolerate any arising fault.
+of an Active FTC is shown in Fig. 3. Compared to passive FTC, active                      • It accepts the degradation in the controller’s performance from
+FTC has a reconfiguration mechanism to respond to faults in real-time                       the time of occurrence of fault till the synthesis of the new control
+and maintain stability with satisfactory performance to overcome the                        law.
+
+                                                                                  2
+M.N. Hasan et al.                                                                                                       Progress in Aerospace Sciences 130 (2022) 100806
+
+
+
+
+                                                  Fig. 3. General layout of an active fault-tolerant control system.
+
+
+1.1. Motivation of the paper                                                          fault-tolerant attitude controller strategies used for spacecraft, and the
+                                                                                      arguments for the need for an intrinsic attitude FTC are presented. A
+    Although the spacecraft are intelligently designed and thoroughly                 comprehensive review of the state-of-the-art spacecraft’s fault-tolerant
+tested before launching into space, however during their mission life,                attitude control is presented in Sections 3 and 4, respectively, from two
+many spacecraft come across faults and failures [12–16]. Despite faults,              controller’s design perspectives. Several open problems and provisions
+most spacecraft still can successfully carry out their mission and extend             for future research directions are discussed at length in Section 5.
+their projected lifespan by implementing fault recovery procedures and                Finally, Section 6 concludes the review.
+control. It is difficult to determine the precise reason for faults in prac-
+                                                                                      2. Fault management for spacecraft
+tical situations. However, according to a study published in 2009 [17],
+it is not surprising to see that most spacecraft faults are caused due
+                                                                                         Aside from the many outstanding achievements of space missions
+to failures in the ACS. This accounts for almost one-third of total
+                                                                                      and operations, some catastrophes have also been reported. It is fair
+faults, which is highest among other fault causes in spacecraft. Since
+                                                                                      to say that humans have paid a high price for the triumphs they
+ACS is an integral subsystem and interconnects many other critical
+                                                                                      currently cherish in terms of resources, efforts, etc. Numerous accidents
+subsystems of spacecraft, any fault in it can significantly impact the
+                                                                                      and failures have also been reported in the literature [27]. Therefore,
+overall performance of the spacecraft. Fault-tolerant attitude control                fault management strategies are implemented during design stages and
+has therefore become an important issue that, in recent decades, has                  spacecraft’s on-orbit operations to prevent incidents and accidents. This
+gained attention not only within space engineering but also within the                fault management system is intended to detect, isolate, and identify and
+academic community. Numerous FTC architecture and methodologies                       recover on-orbital spacecraft’s performance. As a result, fault tolerance
+for various practical systems and applications are reported in the                    capability and reliability are assured and improved.
+literature, [6,18–21], and the effect of feedback on fault diagnosis is
+presented in [22]. The authors in [23] gave a detailed comparison of                  2.1. Conventional fault tolerance techniques for spacecraft
+active and passive FTC approaches while the FDI and FTC for flight
+control are presented [24,25].                                                            In spacecraft design, it is common that almost every spacecraft
+    A passive FTC scheme comprises a single fixed controller and only                 can switch into an ‘emergency’ or ‘safe’ control mode when a fault
+requires the fault-tolerant control to be designed. In contrast, an active            occurs. In this particular mode, any anomalous condition would result
+FTC scheme comprises an FDI module, a reconfiguration mechanism,                      in shutting down all the spacecraft’s thrusters and suspending all the
+and a reconfigurable controller. So, both the FDI module and recon-                   scientific activities until it re-attains its desired orientation. Engineers
+figurable controller (or control law) are designed for an active FTC                  at the ground station assess the situation and propose a solution to
+strategy. The design of an FDI module is of great importance, as                      overcome this anomaly. When the spacecraft is not at immediate risk
+the reconfigurable controller is synthesized based on FDI information.                of collision, de-orbiting, etc., and the mission could still be executed
+Recently, an updated review for FDI design is presented in [9,26] for                 after this prolonged episode of safe mode transition, this approach is
+spacecraft systems. The design of a fault-tolerant controller (FTC) is                sufficient to recover spacecraft’s performance from various software or
+the shared task in both active and passive FTC approaches. In 2015,                   hardware faults. This fault management technique comprises seven key
+Xin et al. [3] reviewed the progress of FTC for spacecraft systems, but,              steps [28] that are mentioned as under:
+since then, enormous progress and advancement have been observed
+                                                                                          1. The engineers continuously assess and determine the spacecraft’s
+in the spacecraft’s fault-tolerant attitude control. Various FTC variants
+                                                                                             health status from the telemetry data received at the ground
+and results are reported in the literature addressing the deficiencies and
+                                                                                             station.
+weaknesses highlighted in [3]. The essential scope of this article is to                  2. If the telemetry data analysis reflects that the spacecraft has
+review the FTC developments’ recent advancements and highlight the                           encountered any fault, the spacecraft is switched to ‘Emergency’
+open problems, challenges, and future research prospects.                                    mode from ‘Normal’ working mode by sending the defined set
+                                                                                             of commands from the ground station. This halts the entire
+1.2. Organization of the paper                                                               scientific mission and prompts the spacecraft to regain and
+                                                                                             maintain its predefined attitude orientation and ensure that the
+   The rest of the article is structured in the following manner for a                       solar arrays are aligned with the sun to guarantee sufficient input
+clear elaboration. The next section briefly outlines the conventional                        power.
+
+                                                                                  3
+M.N. Hasan et al.                                                                                                     Progress in Aerospace Sciences 130 (2022) 100806
+
+
+    3. Meanwhile, at the ground station, the engineers investigate the                   • The spacecraft’s design flexibility in hardware and software sys-
+       cause of the fault.                                                                 tems can reprogram different subsystems by sending appropriate
+    4. The cause of the fault is that its location and diagnosis are                       commands from the ground station. It serves as a valuable aspect
+       then verified by performing various software simulations and                        to recover from a failure, as reported in BeppoSAX [17].
+       experiments.                                                                      • The thorough testing of the spacecraft’s components and sys-
+    5. After the fault detection, an acceptable solution is suggested to                   tems before the launch can effectively improve the spacecraft’s
+       handle this fault.                                                                  reliability.
+    6. The effectiveness of the proposed solution and approach is vali-
+       dated by performing ground tests.                                                 Interestingly, spacecraft’s conventional fault handling strategy can
+    7. If the solution is compelling enough, this new scheme is up-                  be viewed as active FTC with an offline FDI, while the reconfiguration
+       loaded to the spacecraft to resume its scientific mission; other-             mechanism and fault-tolerant controller synthesis are performed at
+       wise, a different solution scheme is redesigned to cater to the               the ground. The overall human-in closed-loop attitude control system
+       occurred fault.                                                               comprises spacecraft and experts at the ground station, making it a non-
+                                                                                     autonomous FTC system. This depicts that the spacecraft’s autonomous
+    To date, this technique is widely used in tackling the faults in                 operation requirements cannot be fulfilled by this traditional fault
+spacecraft, especially in GEO or LEO satellites, etc., and satisfactory              diagnosis and control method, which involves consultation from an
+results are obtained. For instance, a direct broadcast communication                 expert at the ground station. Therefore, improving the spacecraft’s
+satellite, EchoStar-5, suffered from losing one of its reaction wheels               autonomous fault-tolerant control is highly recommended to ensure the
+in July 2001 [29], which caused a temporary interruption of service.                 spacecraft’s safe, stable, reliable, and long-term operations. That is why,
+The timely corrective measures were taken from the ground station,                   over the last two decades, the autonomous fault-tolerant control of
+and the satellite’s normal mode operation was made sure by using a                   spacecraft has attained considerable attention in practical and academic
+spare reaction wheel. Another of its reaction wheels malfunctioned in                communities. The various fault-tolerant ACS strategies will be reviewed
+December 2003; the mode of the satellite was switched from the ground                in the next section.
+station, which utilizes thrusters as primary actuators to maintain its
+desired pointing. Fortunately, the use of thrusters for attitude control             3. Advancements in spacecraft’s attitude control design based on
+did not affect the satellite’s performance. However, it reduced the                  controller-basis design methodology
+satellite’s life due to the increased fuel usage required for thruster
+firing.                                                                                  As mentioned earlier, whether one opts for an active or passive FTC
+                                                                                     strategy, the joint task is designing a fault-tolerant control, with atti-
+2.2. Need of autonomous attitude FTC for space applications                          tude control law design being a crucial and essential task [31,32]. With
+                                                                                     this control law’s application, the faults are tolerated with minimal
+     Spacecraft operations have become increasingly tangled with the                 degradation in the performance. This section reviews the effective tech-
+continuous advancement in space applications, requiring ground sta-                  niques and advancements in spacecraft’s fault-tolerant attitude control
+tions to process and monitor a significant amount of telemetry data [8].
+                                                                                     design, reported in the literature.
+The traditional spacecraft control relies on feedback and assistance
+                                                                                         Various fault-tolerant control laws based on classical and modern
+from the ground stations. However, space applications such as deep-
+                                                                                     control theory are designed and reported in the literature. For instance,
+space exploration generally involve large time-delays in transferring
+                                                                                     a rigid spacecraft’s automatic attitude recovery based on feedback
+telemetry data to the ground station or communication-navigation-
+                                                                                     linearization is reported in [33]. An attitude fault-tolerant control to
+related applications to provide reliable and stable facilities or military
+                                                                                     cater to reaction wheel faults is reported in [34]. A fault-tolerant
+applications during a war, which requires the spacecraft to survive
+                                                                                     control law for the JC2Sat-FF satellite undergoing actuator faults is
+bypassing the assistance from the ground station autonomously [7].
+                                                                                     reported in [35], while the feasibility study for Cassini spacecraft’s
+Therefore, the autonomous operation has become an integral part of
+                                                                                     hybrid attitude control design is outlined in [36]. To overcome the
+spacecraft’s current and future generations [9]. Given the high cost of
+                                                                                     faults in gyros, a novel fault-tolerant control is designed in [37] to ac-
+its research, design, and manufacturing, the spacecraft has limited and
+                                                                                     complish agile attitude control. However, the above schemes ignore the
+finite resources to overcome any fault. The economic losses become
+                                                                                     effects of parametric uncertainties and external disturbances, which can
+colossal when any mishaps or faults occur [30].
+                                                                                     alter the controller’s performance resulting in under-rated spacecraft
+     As mentioned before, a conventional space-earth-space loop mode
+                                                                                     performance. So, therefore, while designing a fault-tolerant spacecraft’s
+is usually practiced by most spacecraft to cater to faults. When the
+                                                                                     attitude controller, it should be made capable enough to cater to the
+spacecraft’s diagnostic module senses an abnormal behavior, experts
+                                                                                     external disturbances and time-varying parametric uncertainties, in
+at the ground station transmit and assess the corresponding data. The
+                                                                                     addition to the possible faults in actuators, components, or sensors.
+spacecraft is switched to emergency mode, and then the findings and
+solution are then transmitted back to the spacecraft. Further, there
+                                                                                     3.1. Design of attitude FTC based on Sliding Mode Control (SMC)
+are always some communication delays between the spacecraft and
+the ground station. As the space mission becomes more involved with
+tight maneuvering schedules and advancements in computational and                        To achieve desired controller characteristics, many attitude control
+sensing abilities, present and future space missions would only succeed              strategies reported in the literature rely on the sliding mode con-
+if there is sufficient onboard control autonomy. The repeated transition             trol (SMC) technique to cater to highly nonlinear coupled uncertain
+to emergency mode is costly and dangerous to the spacecraft’s mission;               systems [3]. SMC also offers rapid response characteristics and is
+it is not applicable or feasible in critical mission situations. For instance,       highly insensitive to external disturbance and uncertainties in system
+during the docking-rendezvous mission phase, if a fault occurs and the               parameters. That is why numerous attitude control strategies based
+spacecraft is switched to emergency mode, it is highly probable that                 on SMC are reported in the literature [38,39]. SMC-based active and
+both the spacecraft during docking are at significant risk and could                 passive laws are formulated in [40] to address actuator outage fault. A
+cause a catastrophic incident. So, we can learn the following aspects                terminal sliding mode control is presented in [41] with actuator fault
+from the conventional fault tolerance techniques.                                    simulation is considered for satellite formation flying, but the stability
+                                                                                     analysis is performed in the absence of actuator faults. That research’s
+    • The reliability of the spacecraft is greatly enhanced by providing             results were further improved in [42] for rapid attitude orientation for
+      enough hardware and software redundancies.                                     rigid spacecraft experiencing parametric uncertainties and exogenous
+
+                                                                                 4
+M.N. Hasan et al.                                                                                                    Progress in Aerospace Sciences 130 (2022) 100806
+
+
+disturbances; even when there was no control on the roll or yaw axis,               asymptotic tracking. A bounded function-based saturated FTC is re-
+the attitude was proven to be uniformly ultimately bounded (UUB).                   cently presented in [61] by utilizing nonlinear adaptive state feedback
+For various fault scenarios related to solar panels and slow varying                control. The controller does not require fault information and attains
+uncertainties in mass distribution, a fault-tolerant control based on SMC           attitude tracking with actuator faults and restricted input. The authors
+is given in [41]. A nonsingular terminal SMC-based FTC is presented                 in [62] presented an adaptive control for attitude tracking of miniature
+in [43] for small satellite attitude control. For nanosatellites, a practical       satellites considering multiple reaction wheel faults. The controller’s
+SMC-based attitude fault-tolerant controller is developed in [44] and               performance is validated with hardware in loop (HIL) simulations.
+tested with the aid of an air-bearing testbed on the ground. Another
+robust integral sliding mode control scheme is presented in [45], which             3.3. Design of attitude FTC based on Control Allocation (CA)
+is robust to external disturbances and inertial uncertainties, and can
+tackle actuator’s output degradation fault.                                             Generally, the spacecraft is equipped with redundant actuators and
+                                                                                    sensors, which enhances the reliability of the spacecraft attitude control
+3.2. Design of attitude FTC based on Adaptive Control (AC)                          system. When one of the actuators suffers from any fault, the spacecraft
+                                                                                    may still be provided with the necessary actuation power for the desired
+    Another popular modern control strategy to handle systems with                  maneuvering, courtesy of the remaining active actuators. Therefore, the
+parametric uncertainties is adaptive control (AC) [46], which can esti-             control allocation problem’s outcome is not always unique to produce
+mate the uncertain parameters online. This feature attracts the control             the desired control effort [63]. The static control allocation, which
+engineers to utilize this adaptive control feature in spacecraft’s fault-           is usually the most common control allocation scheme, is realized
+tolerant attitude controller design, relaxing the before-hand uncertainty           by computing the pseudo-inverse of the actuator’s distribution ma-
+bound knowledge. It was first reported in [47] for the flight con-                  trix [64]. This technique, however, is not an efficient method of entirely
+trol system of spacecraft. In [48], the authors, during the designing               exploiting the remaining control effort and leads to the dynamic control
+of time-varying inertia matrix, considered the change in center of                  allocation [65–67], which comparatively serves as an effective control
+mass of spacecraft and presented an adaptive attitude tracking control
+                                                                                    and offers some advantages.
+for a rigid spacecraft suffering from actuator faults, disturbances and
+                                                                                        Employing this control strategy and its different variants for space-
+time-varying inertial parameters. In [49], during the designing of time-
+                                                                                    craft’s attitude control, several FTC schemes are reported in the litera-
+varying inertia matrix, the authors considered the change in center of
+                                                                                    ture to overcome the actuator faults. The efficient control allocation for
+mass of spacecraft and presented an adaptive attitude tracking con-
+                                                                                    spacecraft’s thrusters is presented in [68], and by the solution of linear
+trol for a rigid spacecraft suffering from actuator faults, disturbances,
+                                                                                    programming, a reliable attitude controller was designed in [69]. These
+and time-varying inertial parameters. Another adaptive control-based
+                                                                                    controllers were designed for nominal systems and single-point failures
+strategy is presented in [50], which estimates the disturbance and
+                                                                                    to attain attitude control [70]. A guaranteed tracking of linear dynamic
+system parameters upper bound online, and with these estimations,
+                                                                                    models for a spacecraft’s translation and rotation control is presented
+it formulates the control law. Two reaction wheel faults were con-
+                                                                                    in [71], reducing the computational burden by utilizing only those
+sidered and tolerated to achieve fault-tolerant attitude tracking. A
+                                                                                    actuators needed for stable control. In [72], the virtual control input
+combination of fuzzy and adaptive control techniques is presented
+                                                                                    is reassigned to the healthy actuators to achieve robustness without
+in [51] to overcome the disturbance, actuator faults, and parametric
+                                                                                    altering the controller configuration. Thus realizing an FTC control
+variations. The two control laws were updated online to achieve fault-
+                                                                                    allocation for spacecraft systems with over actuation and suffering from
+tolerant control. Adaptive control-based passive fault-tolerant control
+                                                                                    actuator faults, but with the robustness and performance trade-off.
+for spacecraft formation flight was developed in [52]. As the controller
+                                                                                    A robust control scheme for rigid spacecraft is presented in [73] to
+developed was passive, there was no need for an FDI module. Another
+                                                                                    address the situation of actuator misalignment and faults.
+adaptive control-based attitude control design was presented in [53,54]
+to compensate actuator faults and disturbances. A combination of
+adaptive backstepping feedback controller and adaptive feed-forward                 3.4. Design of attitude FTC based on multiple control techniques
+compensator is developed for spacecraft failure and disturbance com-
+pensation in [55]. It is a common phenomenon that the inertia matrix of                 As the control theory flourishes with time, various fault-tolerant
+a spacecraft varies with time due to fuel depletion. An adaptive attitude           attitude control design strategies evolved too. Rather than relying on
+controller is presented in [56] for both rigid and time-varying (non-               a single control technique, the control engineers proposed a fusion of
+rigid) components of the inertial matrix. An adaptive fault-tolerant                various above-mentioned control strategies. For instance, for unknown
+attitude controller is presented in [49] to address the deviation and               bounds on inertia and disturbance, an online control allocation-based
+gain faults in actuators based on the ideal reference model. A nonlinear            FTC law is presented in [74] to tolerate faults. The parameter adap-
+direct adaptive control, independent of the mathematical model and                  tation is aided with the modified time-varying dead-zone to restrict
+not relying on the online estimation of inertial moments that can                   the adaptive gain to attain higher values. The authors in [75] utilize
+accommodate comparatively large inertial uncertainties, is presented                various control allocation schemes and modified proportional deriva-
+in [57]. Relying on the feed-forward signals from the nominal reference             tive baseline controller and established superior performance than
+model and tracking errors between the nominal and uncertain system,                 pseudoinverse control allocation design. The authors in [76] presented
+a rest-to-rest maneuver control and robotic capture of the Interna-                 an adaptive backstepping sliding mode FTC with actuator errors and
+tional Space Station free-flyer is simulated. In [58], the authors used             disturbances for attitude control problems. A combination of high-level
+uncertainty decomposition to handle the uncertainty in the control                  model reference adaptive controller and robust control allocation is
+gain matrix. An adaptive control-based asymptotic attitude tracking                 introduced in [77]. The computational burden is reduced by converting
+is achieved for flexible spacecraft by parameterizing the flexible and              the control allocation problem to min–max optimization and trans-
+dynamic uncertainties. In [59], in the absence of disturbances and                  forming it to scalar value optimization. When the actuator is stuck
+model uncertainties, an adaptive neural network-based control law is                at a particular position at some unknown instant, an adaptive control
+presented in which neural networks approximate the actuator satura-                 allocation for flight systems is presented in [78] where an adaptive
+tion nonlinearities. The actuator sign error fault might arise in some              reference model is used to tolerate actuator faults and disturbances,
+situations due to hardware or software faults, failing the spacecraft               and the design is validated on NASA’s Generic Transport’s linearized
+mission. A multiple model adaptive control scheme in [60] is presented              model. In another work [79], a similar controller was realized for
+to tolerate actuator sign errors and inertial uncertainties to ensure               severe actuator failures with actuator saturation.
+
+                                                                                5
+M.N. Hasan et al.                                                                                                      Progress in Aerospace Sciences 130 (2022) 100806
+
+
+    Acknowledging the robustness properties associated with the SMC,                 design only guarantees the asymptotic convergence of attitude trajec-
+a combination of variants of SMC and adaptive control [80] is favored                tories, which is practically undesired in many situations, leading to
+by many control engineers and abundantly reported in the literature                  the finite-time or fixed-time attitude control. It gained much attention
+to achieve desired attitude tracking performance. A robust adaptive                  recently. Numerous results are reported in the literature based on
+tracking controller for space robot is presented in [81], where the                  terminal SMC (TSM) [88–90], homogeneous method [91], non-singular
+system’s slow dynamics are tackled by adaptive robust sliding mode                   terminal sliding mode control (NTSM) [92], fast non-singular terminal
+control, and an optimal linear quadratic regulator derives the fast                  SMC (FNTSM) [93,94], and adding power integrator [95].
+dynamics. In addition to the external disturbances, flexible appendage,                  The authors in [96] employed Lagrange-like equations to specify
+and actuator degradation, the input signal quantization is addressed                 the spacecraft’s attitude dynamics. Two types of actuator faults were
+and tackled by a quantized adaptive terminal SMC to achieve fault-                   tackled. The finite-time control is realized using TSM and an adaptive
+tolerant attitude control for a class of plug and play satellites [82].              law to estimate the uncertainty bounds. An NTSM based scheme is
+The quantization parameters are fed to the controller gains to overcome              presented in [97] to achieve quick, exact, and finite-time attitude
+the quantization errors. The controller is able enough to overcome the               control. The singularity and the chattering phenomenon were catered
+bounds on rigid–flexible coupling nonlinearities, unknown signals, and               even with actuator saturation, failures, uncertainties, and disturbance.
+actuators’ efficiency parameters.                                                    By enhancing the standard twisting algorithm (STA) performance, a
+                                                                                     novel STA based on the adaptive gain is presented in [98] to resolve the
+4. Advancements in spacecraft’s attitude control design based on                     problem of nonoverestimating. The controller is free from chattering
+controller performance characteristics                                               and singularity, achieves sufficient fast finite-time convergence, and is
+                                                                                     simulated using parameters of Uosat−12.
+    In many instances, it is desired that the controller should possess                  Finite-time convergence under fuzzy logic design and adaptive
+some performance characteristics such as prescribed performance, fi-                 learning law and using terminal SMC is presented in [99]. Two novel
+nite or fixed-time convergence, etc., in addition to the desired degree of           schemes to regulate thruster faults in spacecraft incorporating adaptive
+fault tolerance. In this section, the spacecraft’s attitude FTC is reviewed          finite-time fuzzy attitude FTC and based on FNTSM are presented
+based on the controller’s performance characteristics.                               in [100]. Another novel non-singular integral terminal SMC-based
+                                                                                     finite-time attitude FTC scheme is reported in [101]. In [89], the
+4.1. Fault-tolerant attitude control design with prescribed performance              authors presented two novel time-varying terminal SMC scheme-based
+                                                                                     designs to achieve finite-time convergence of attitude tracking error
+    For most recent and advanced space missions, it is not only suffi-               to zero. An efficient finite-time adaptive control-based scheme incor-
+cient to attain stability with favorable steady-state characteristics, but           porating SMC is reported in [102] to handle the loss of effectiveness,
+the transient time’s trajectories are also of equal importance. Transient            bias, float, and lock-in-place reaction wheel faults. In another work, a
+characteristics such as overshoots and the rate of convergence may also              combination of a simple fault-tolerant controller to guarantee finite-
+be constrained in some scenarios. A controller capable of incorporating              time tracking and an additional adaptive FTC is utilized to cater to
+these characteristics is termed a prescribed performance controller.                 input saturation problem is reported in [103] to overcome all four
+Usually, achieving prescribed performance is a tedious and challenging               types of reaction wheel faults. An adaptive fuzzy fault-tolerant second-
+task. The biggest challenge is the nonlinear nature of attitude dynam-               order terminal SMC design scheme is given in [104] to achieve practical
+ics with high coupling. The other is due to exogenous or unwanted                    finite-time stability and was shown to have better rejection properties
+disturbances and inertial parametric uncertainties. Most of the above-               to disturbances and uncertainties and overcome actuator faults. A
+mentioned FTC strategies lack these prescribed performance abilities                 highly robust, efficient finite-time FTC design based on adaptive fast
+and rely on the control gain selection. It is, no doubt, challenging to              terminal SMC is reported in [105], which is insensitive to disturbances
+guarantee steady-state and transient performance bounds beforehand                   and does not require beforehand knowledge of bounds on these. A
+in the design phase, which is also challenging to entertain in the closed-           finite-time fault-tolerant controller that can meet multiple constraints
+loop design. However, it offers excellent features by not wasting time               is designed in [106], based on adaptive FNTSM. An almost global
+in control gain selections. Soon after evolving the idea of prescribed               integral SMC-based finite-time convergence of attitude trajectories is
+performance control (PPC) by authors in [83], it became abundant                     achieved in [107]. A successful attempt is presented in [108] to
+in the literature. This prescribed performance FTC attitude control                  combine fast TSM and time-varying SMC. This novel methodology
+is realized in [84] by blending adaptive estimation and prescribed                   eliminates the singularity problem without additional switched terms
+performance control in backstepping control design. Considering the                  and obtains finite-time fault-tolerant convergence. By introducing a
+input saturation, besides prescribed performance, actuator degradation,              smooth function to approximate the saturation behavior, an FNTSM
+disturbances, and constant but unknown inertial parameters, a passive                manifold is realized. A norm approximation approach incorporates
+adaptive FTC attitude control in [85] is realized by enforcing the                   fuzzy logic, establishing finite-time convergence [109]. Another FNTSM
+designer-defined performance function on the attitude tracking error.                and adaptive fuzzy control-based attitude tracking design for fault-
+For an uncertain rigid spacecraft with bounded disturbance, the robust               tolerant finite-time tracking is given with the uniformly ultimately
+attitude trajectory, defined on SO(3), is converted into an error dy-                bounded closed-loop trajectories [110]. Recently, by approximating the
+namic system’s point stabilization to achieve prescribed performance                 unknown functions in sliding manifold derivative, Chebyshev neural
+characteristics [86]. Another robust FTC that addresses total actuator               network (CNN) was used in [111] to abolish strict assumptions on
+failure [87] with prescribed performance metrics despite actuator sat-               uncertainties. A novel adaptive CNN-based FTC law was presented,
+uration and external disturbances is formulated, independent of the                  rendering the attitude trajectories to equilibrium in a limited time.
+sensitive selection of controller gains and candid knowledge of inertial                 Despite having the feature of convergence of trajectories in finite-
+parameters.                                                                          time, there is a slight pitfall associated with the finite-time control. The
+                                                                                     convergence rate or the settling time with which the trajectories will
+4.2. Fault-tolerant attitude control design with finite/fixed time convergence       converge depends on the system’s initial states, which reflects that only
+                                                                                     the upper bound of the settling time can be assured. The exact estimate
+    The slew maneuvering or the rapid maneuver abilities are part and                of the settling time cannot be calculated, and it can grow unboundedly
+parcel of present and future space missions where the time interval                  for the case when the initial condition approaches infinity. Addressing
+is crucial. The required maneuver should be performed within the                     this, a variant of finite-time control in which the trajectories’ settling
+prescribed time interval. Most of the mentioned above attitude FTC                   can be achieved in fixed-time instead of finite time is reported in the
+
+                                                                                 6
+M.N. Hasan et al.                                                                                                   Progress in Aerospace Sciences 130 (2022) 100806
+
+
+literature and termed fixed-time control [112]. It can be regarded as                 A reliable impulsive control approach is then utilized based on
+the extended version of finite-time control. A fixed-time fault-tolerant          genetic algorithm (GA) and Lyapunov theory to achieve fault-tolerant
+attitude controller is realized in [113] based on a novel fixed-time              rendezvous control. In [125], the author proposed two fixed-time FTC
+sliding surface. Its convergence rate is independent of initial states            for a tumbling target, in which the line-of-sight (LOS) coordinate is
+and an adaptive controller, ensuring fixed-time reachability to a small           devised based on the target’s attitude, and the relative dynamics are
+region around the origin with simultaneous consideration of actuator              derived concerning the target. To describe relative dynamics during
+saturation, faults, and disturbances. Another fixed-time attitude FTC             rendezvous, a linearization free equation for elliptical target orbits is
+design is reported in [114], which utilizes an exponential function in            used in [126] to describe the system as a linear time-variant system,
+the controller realization, and an adaptive fixed-time NTSM to reduce             and an adaptive SMC is formulated to achieve desired FTC. A dual-
+the time taken by trajectories to reach the sliding surface and attain            quaternion-based finite time FTC scheme for chaser-target spacecraft
+fixed-time convergence of attitude and angular velocities. A global               that can handle multiple actuator faults, disturbance, and uncertainties
+fixed time FTC attitude control problem is solved in [115] in which               is reported in [127]. A combination of adaptive and SMC techniques,
+a hysteretic-based jump condition along with the exponential vector is            capable of tackling multiple actuator faults, is formulated in [128] for
+presented to negate the hurdles in achieving global stability defined on          proximity operations of chaser-target to achieve fault-tolerant attitude
+the special orthogonal group (SO(3)). For unknown fault information               tracking. For both matched and unmatched disturbances and actuator
+and limited input control, a similar scheme is presented in [116], which          saturation and faults, an adaptive robust relative pose controller (RPC)
+utilizes the lie group’s logarithm map to convert the attitude tracking           is defined in [129] utilizing the adaptive backstepping and anti-windup
+problem into a stabilizing problem on SO(3), an adaptive fixed-time               compensator for spacecraft’s rendezvous-dock operation. Another fault-
+FTC problem is formulated. These mentioned results address the at-                tolerant saturated control, which is highly robust and does not require
+titude stabilization problem for rest-to-rest maneuvers only, which               exact knowledge about the bounds on external disturbances and model
+depicts that the desired angular acceleration is zero. This is unrealizable       parameters, is reported in [130] to achieve practical convergence of
+in many practical situations, where the tracking of time-varying desired          trajectories for tumbling targets during rendezvous-docking missions.
+angular velocity is required. To obtain this, a robust, exact, singularity-
+free fixed-time fault-tolerant time-varying attitude tracking is presented        4.4. Fault-tolerant attitude control design with observers
+in [117] with a fast convergence rate. Recently, to achieve fixed-time
+convergence of attitude trajectories for flexible spacecraft considering              As discussed above, the controller’s reconfiguration in active FTC
+attitude constraints and flexible coupling, an adaptive FTC is presented          directly depends on the information it gets from the FDI module.
+in [118] to overcome actuator faults, disturbance and uncertainties.              However, instead of employing an FDI module, a simple, practical, and
+                                                                                  yet efficient strategy is to employ observers to estimate the faults in
+4.3. Fault-tolerant attitude control design for proximity operations              actuators or sensors to overcome the complexities and computational
+                                                                                  burden associated with FDI [131]. Different variants of observers are
+    The failures of spacecraft and satellites orbiting in space are in-           reported in the literature, such as state observers [132], terminal
+creasing and causing the loss of billions of dollars and polluting the            sliding mode observer (TSMO) [133,134], iterative learning observers
+space environment. Not only the failures, but some satellites orbiting            (ILO) [135,136], unknown input observers [137], extended state ob-
+reach their mission life and need to be decommissioned; others may                servers (ESO) [138]. So, the overall performance of the FTC will rely
+require some on-orbit repair or servicing or removal of space debris.             extensively on the observer’s performance. It should be noted that the
+These scenarios are generally termed proximity or rendezvous-docking              observer should be fast enough to respond to any fault; otherwise, the
+operations and have attracted significant attention from researchers              spacecraft might not be able to recover from the fault in time. An
+in recent years. In such operations, an efficient way is to capture               observer-based online CA scheme is presented in [139] to compen-
+the unwanted spacecraft (or debris) with a robotic arm mounted on                 sate for the loss of actuator effectiveness fault without reconfiguring
+the service spacecraft base [119]. Once the unwanted spacecraft is                the controller. A reconfigurable, based on learning observer (LO),
+captured, the combined spacecraft’s attitude dynamics need to be ad-              actuator’s FTC is presented in [140]; however, the disturbances and
+dressed immediately. This is due to sudden large variations in the                uncertainties were neglected. To address the problem of reentry for
+service spacecraft’s mass and the change in its center of mass [120].             the reusable launch vehicle (RLV) suffering from actuator faults, a dis-
+The new attitude dynamics are also affected by the large variations in            turbance observer (DO), which is a finite-time multi-variable adaptive
+the actuator’s configuration matrix. A highly precise and synchronized            gain observer, is formulated in [141] without knowing disturbance’s
+attitude dynamics and tracking of both target and chaser are required             upper bound to achieve high accuracy and less chattering tracking
+to accomplish rendezvous and docking missions. The problem becomes                control. Another DO-based nonlinear feedback linearization scheme to
+more demanding when external factors such as disturbances, inertial               cater to actuator faults and uncertainties is presented in [142] for
+uncertainties, actuator faults, and saturation are part and parcel of             the spacecraft’s rendezvous and docking phase. An iterative DO-based
+the control system, especially when the target spacecraft (or debris)             scheme is presented in [143], which considers time-varying actuator
+is floating in space [121]. When the spacecraft is docked, actuator               faults and disturbances. The authors in [144] proposed a finite-time
+faults and saturation become more probable for the combined space-                ESO and robust control to based FNTSM, and the trajectories were
+craft because only the service spacecraft is equipped with the attitude           proven to be theoretically finite-time stable. In [145], an adaptive
+controller. It is solely responsible for accomplishing attitude control           ESO-based FTC scheme for reaction wheel faults and disturbances is
+of the combined spacecraft. Over the last decade, significant effort              formulated to achieve global finite-time stability. The advantage is that
+and attention have been given to autonomous rendezvous and docking                it does not require prior information about the upper bounds on faults
+control problems considering faults, disturbances, and uncertainties. An          and uncertainties. A combination of an adaptive observer and adaptive
+𝐻∞ based robust controller is presented in [122] to successfully dock             terminal SMO (ATSMO) is presented in [146] to cater to nonlinear
+with a non-cooperative target, while the chaser spacecraft is suffering           disturbances and additive faults. Overcoming the observer’s estimation
+from thruster faults, saturation parametric uncertainties. Addressing             errors, a continuous finite time TSM based controller is formulated
+the control surface damage and actuator faults for near-space vehicles            to achieve chattering-free performance with guaranteed finite-time
+(NSV), a decentralized fault-tolerant [123] strategy is presented. By             convergence. An active FTC scheme is presented in [147], where an
+considering the rendezvous system as a switching system, the authors              observer first detects the fault and avoids the false alarm. All the
+in [124] transform the rendezvous problem into the switched system’s              multiplicative or additive faults are estimated together to simplify the
+asymptotic stabilization problem.                                                 estimation design. A backstepping FTC, based on hyperbolic function, is
+
+                                                                              7
+M.N. Hasan et al.                                                                                                   Progress in Aerospace Sciences 130 (2022) 100806
+
+
+employed to smoothly bring the trajectories to equilibrium. The authors           time-varying gain for the observer and to find out the angular velocity
+in [148] proposed a novel composite observer that can efficiently                 estimates in a limited time, where neural network (NN) handles the
+estimate mismatched disturbances, faults, fault efficiency, and partial           unaccounted nonlinearities and unknown parameters. A combination
+states. The observer is different because it estimates the actuator faults        of adaptive fuzzy-based observer and controller is designed in [160]
+and uncertainties individually instead of estimating them together.               to realize fault-tolerant attitude control without rate measurement. A
+Based on these estimates, an adaptive FTSM based FTC is proposed.                 learning observer-based design is reported in [161] to calculate faults
+In [149], the authors consider bias and loss of effectiveness fault and,          and system states. However, the estimation error corresponds to a small
+based on adaptive SMO, proposed a combination of backstepping and                 region near zero, and the angular velocities are not available infinite
+fractional order TSM to achieve fault tolerance. The fixed-time FTC               time, making the control unreliable. Recently, an observer-based on
+problem is addressed in [116], in which two controllers are proposed              multivariable super twisting SMC [162] for accurately estimating at-
+to achieve the task. Based on the nonlinear observer’s information,               titudes and velocities simultaneously and NN-based FTC is presented
+integral SMC and geometric homogeneity form the first controller                  for efficient fault-tolerant attitude control capabilities for fully actuated
+whose task is to guide the tracking error trajectories to the origin. The         spacecraft. The authors in [163] proposed a finite-time Attitude stabi-
+second adaptive controller is realized to further guide the tracking error        lization in which the continuous finite-time ESO is used to estimate
+trajectories to equilibrium. The advantage lies in that settling time is          the actuator failures and angular velocity concurrently. Then an FTC is
+not the function of initial states and can be determined beforehand.              achieved using super twisting and NTSM.
+A nonsingular TSM based ESO is designed in [150] to estimate the
+lumped uncertainties or faults in finite-time. A continuous FTC is then           4.6. Fault-tolerant attitude control design with the consideration of sensor
+synthesized using the super-twisting and SMC techniques. A prescribed             faults
+performance FTC employing a nonlinear DO-based strategy is proposed
+for combined spacecraft during the post-capture phase. A dynamic                      An attitude controller controls the spacecraft’s orientation, but the
+surface and nonlinear ESO-based finite time FTC are realized after con-           controller takes corresponding decisions based on information from the
+structing the attitude tracking dynamics for the combined chaser target
+                                                                                  sensors. Due to prolong and continuous operation of these sensors, they
+spacecraft [151]. The authors further improved their results [152] by
+                                                                                  may experience degradation or faults. Most fault-tolerant approaches
+considering the uncertainties in the reaction wheel’s reconfiguration
+                                                                                  reported consider the actuator case only; however, any sensor’s fault
+matrix and measuring attitude/angular velocities, and using robust CA
+                                                                                  may lead to a disastrous situation. Some results addressing sensor faults
+based on LMI to distribute toque to reaction wheels. In [134], a candid
+                                                                                  are also reported in the literature. For instance, by combining fault
+control based on ESO estimates the model uncertainties and external
+                                                                                  estimation (FE) filter and a functional observer, a dynamic output
+disturbance. Based on this observer, a robust finite time Backstepping
+                                                                                  feedback FTC [164] to compensate sensor faults and attenuation of
+controller is realized for the spacecraft’s attitude control.
+                                                                                  disturbance to a certain level is presented for flexible spacecraft. A
+                                                                                  novel FE for sensor-related faults’ estimation, utilizing an adaptive
+4.5. Fault-tolerant attitude control design without rate sensor
+                                                                                  integral observer, is given in [165]. Another novel observer that si-
+                                                                                  multaneously estimates the faults in attitude and angular rate sensors
+    The above-mentioned FTC strategies assume that the spacecraft is
+                                                                                  for spacecraft is presented in [166]. To achieve reliable fault-tolerant
+equipped with sensors measuring all the spacecraft’s states, i.e., there is
+                                                                                  attitude control using a robust observer scheme, a passive FTC is
+attitude and angular velocity (rate) sensors installed on the spacecraft.
+                                                                                  presented in [167]. A fault-tolerant attitude control scheme for flexible
+However, this is not always true because there are certain situations in
+                                                                                  spacecraft is reported in [168], based on sensor fault compensation
+which it is not feasible to employ a rate sensor. This may be due to cost
+                                                                                  and descriptor observer strategy. A virtual observer in [169,170] is
+or physical limitations associated with spacecraft. For instance, many
+                                                                                  first implemented, and by eliminating the unknown variable in it,
+nanosatellites or microsatellites are not equipped with rate sensors
+                                                                                  a real observer is achieved to compensate both actuator and sensor
+due to their size constraint. Therefore the estimation of the angular
+                                                                                  faults simultaneously. Based on this observer fault-tolerant controller
+velocity is needed in control law to apply effective control. This issue is
+                                                                                  is realized based on integral SMC. The authors in [171] presented an
+addressed in the literature, and many results are reported. For the case
+                                                                                  𝐻∞ based observer design to achieve fault tolerance to tackle both
+of actuator fault, fault-tolerant attitude control is reported in [153],
+                                                                                  actuator and sensor faults. In another work, the authors simultaneously
+which considers that the sensor measures only the attitude. However,
+the effect of uncertainties and disturbance is not addressed. In [154],           considered sensors, actuators, alignment, and external disturbance and
+the authors realized rate sensor-free fault-tolerant attitude control and         achieved 𝐿2 performance [172] using the CA to negate unhealthy
+designed two observers based on sliding mode to estimate angular                  actuators and attain prescribed performance. Another SMO-based fault-
+velocity and actuator faults, respectively. Another practical design,             tolerant scheme is presented in [173] for a rigid spacecraft to cater to
+which is velocity free and fault-tolerant, is presented in [155], based           sensor faults.
+on nonlinear proportional Integral (PI) controller robust least square
+control allocation (RLSCA) to tackle the outage and stuck actuator                5. Prospects of spacecraft’s attitude FTC
+faults. A low cost and reliable design in which a sliding mode observer
+(SMO) and an adaptive estimation technique reconstruct the system                     In previous sections, a comprehensive review of state-of-the-art FTC
+states for a class of nonlinear systems is reported [156]. The controller         methodologies was presented. Various FTC schemes were discussed
+is realized on the three degrees of freedom satellite simulator. To               from two major perspectives; controller-basis design techniques and
+avoid discontinuities and chattering, an inherently continuous finite             their performance attributes. Some of the prominent spacecraft’s atti-
+time NTSM controller and a combination of angular velocity calcu-                 tude FTC schemes with their salient performance attributes, features,
+lation algorithm and a model-free adaptive finite-time observer are               limitations, and references are tabulated in Table 1. It is worth mention-
+designed [157] to realize the output feedback fault-tolerant attitude             ing that the controller-basis of all the FTC schemes given in Section 4
+control for spacecraft. A novel multivariable and continuous ISM con-             is based on one of the design techniques mentioned in Section 3, but
+troller and the input shaping technique to suppress flexible appendages’          with some additional variants or functions such as observers, NN-based
+vibrations are reported in [158]. The controller’s two components                 estimators, FNTSM, PPC, etc., in order to attain desired performance
+involved a continuous nominal controller and a modified multivariable             characteristics. This section presents various challenges, open prob-
+twisting controller to overcome the faults and disturbances. Based on             lems, and possible research prospects for spacecraft’s fault-tolerant
+the states’ norm estimate, an FTC is realized in [159] to select a suitable       attitude control design by assessing the existing FTC schemes.
+
+                                                                              8
+M.N. Hasan et al.                                                                                                                  Progress in Aerospace Sciences 130 (2022) 100806
+
+Table 1
+Various spacecraft’s attitude FTC schemes with their key performance attributes.
+ Method/                SMC              Control             Backstepping          Adaptive        AC + SMC           AC + TSM             AC/BC +             SMC/BC/AC +
+ Attributes                              Allocation (CA)     Control (BC)          Control (AC)                                            FNTSM               Observer or AI
+ Required               Attitude and     Attitude and        Attitude and          Attitude and    Attitude and       Attitude and         Attitude and        Attitude, velocity
+ measurements           velocity         velocity            velocity              velocity        velocity           velocity             velocity            (optional)
+ Uncertainty and        Excellent           –                Good                  Good            Excellent          Excellent            Excellent           Excellent
+ disturbance
+ rejection
+ Tracking               Average          Average             Average               Satisfactory    Improved           Precise              Highly precise      Precise
+ precision
+ Fault                  Actuator         Actuator            Actuator              Actuator        Actuator           Actuator             Actuator            Sensor &/or
+ handling                                                                                                                                                      actuator
+ Key                    Simple,          Simple              Simple                Does not        Robust, does not   Robust, fast         Finite/fixed        Output feedback,
+ features               robust                                                     require         require            convergence          time                prescribed
+                                                                                   uncertainty     uncertainty                             convergence         performance
+                                                                                   bound value     bound value
+ Drawback/              Requires         Requires            Limited fault         Asymptotic      Asymptotic         Singularity may      Complex             Complex
+ limitation             uncertainty      redundant           tolerance ability     convergence     convergence        occur
+                        bound            actuators                                 only            only
+ Key                    [40,42]          [70,72,73]          [76,174]              [51,52,58,60,   [82,107]           [38,80,89]           [99,100,106,109,    [134,145,147,
+ references                                                                        61]                                                     111]                163,175,176]
+
+
+
+5.1. Key challenges and open problems                                                         the controller’s accuracy and performance. So, it is natural to model and
+                                                                                              consider the spacecraft’s ignored flexible dynamics and investigate the
+    For the case of components or actuator faults, spacecraft’s attitude                      attitude controller’s fault-tolerant capabilities in the events of faults,
+FTC is well tackled and comprehended. Despite recent advances in                              disturbances, and uncertainties.
+the spacecraft’s attitude FTC, when the faults are compounded with                                The flexible spacecraft is usually modeled as an interconnected
+parametric uncertainties and external disturbances, the problem still                         system with rigid–flexible coupling. Primarily two methods are used to
+has some challenges and open aspects that are not completely com-                             address these unwanted oscillations. The first method involves the in-
+prehended and need to be addressed to accomplish reliable and safe                            stallation of dedicated actuators and sensors for vibration measurement
+spacecraft missions. Especially in situations where there is a need for                       and control [177–180]. The second approach considers the flexible
+high precision accuracy. Following are some still unresolved aspects                          dynamics as an under-actuated system to reduce the cost and de-
+of spacecraft’s attitude FTC which requires further investigations and                        sign complexities. Their effect is suppressed either by estimating them
+solutions.                                                                                    via observers [181], countering their effect in control law, or treat-
+                                                                                              ing them as a bounded disturbance [182]. The later technique offers
+5.1.1. Considering actuator nonlinearities                                                    the advantage of simplicity and is computationally less demanding.
+    Most of the existing schemes do not consider the nonlinearities asso-                     For a fault-free flexible spacecraft, several control strategies using
+ciated with the actuators and assume that the actuator’s output is linear                     back-stepping control [174], adaptive control [183], observer-based
+to its input. Although some actuator’s saturation results are reported,                       control [184], SMC [185], etc., have been reported that offer desirable
+besides saturation, some other nonlinearities may also affect the ac-                         control characteristics such as disturbance rejection [186], velocity free
+tuator’s performance, such as dead-zone or rate-of-change constraints.                        control [187], prescribed performance [188] and fixed-time conver-
+The case becomes more demanding when an actuator suffers from a                               gence of trajectories [118]. However, without actuator/sensor faults
+malfunction, and its dynamics change due to the faults. The actuator’s                        consideration, traditional attitude control schemes are insufficient to
+amplitude saturation dynamics and saturation bounds may also alter,                           control an under-fault flexible spacecraft reliably. Few FTC strategies
+and the controller’s overall robustness is lowered. The relationship be-                      have been propounded for flexible spacecraft’s attitude tracking and
+tween a saturated faulty actuator and a reconfigurable controller needs                       control with simultaneous suppression of vibrations to achieve decent
+further investigation. Besides designing an anti-saturation attitude FTC,                     performance [58,82,153,189]. However, when compounded with the
+another critical aspect is considering the actuator’s output constraints.                     environmental disturbances, inertial uncertainties, and actuator/sensor
+In many situations, the actuators’ rate is also constrained and needs                         faults, the results need further insight and investigations to realize pre-
+to be incorporated while designing an attitude FTC for spacecraft. In                         scribed performance. For instance, the design in [190] can be further
+addition to constraints, due to parametric and inertial uncertainties, the                    investigated to enhance the steady-state performance and address the
+controller is likely to exhibit high-frequency components that need to                        actuator’s saturation effects.
+be addressed for the actuator’s durability and reliability. Furthermore,
+almost all the existing results consider that the spacecraft is fully                         5.1.3. Anti-unwinding fault tolerant attitude control design
+actuated. The attitude FTC of an under-actuated spacecraft is still an                            A Spacecraft’s attitude dynamics are often represented by quater-
+open problem to explore.                                                                      nions which offer attractive features such as global representation and
+                                                                                              singularity-free. Due to the quaternion’s double cover property, there
+5.1.2. Considering effects of flexible appendages                                             are two mathematical representations for a spacecraft’s given physi-
+    Most modern spacecraft are installed with various flexible ap-                            cal attitude orientation [191], and hence there are two equilibrium
+pendages that may cause significant vibrations during slew maneuvers                          points [1 0 0 0]𝑇 and [−1 0 0 0]𝑇 , of which only one is consid-
+such as robotic assembly, lightweight, and large solar panel assembly.                        ered as stable equilibrium in conventional control [38,80]. Hence,
+However, the spacecraft is generally modeled as a rigid body. Almost                          under certain initial conditions, the closed-loop system’s trajectories
+all the published results, with a few exceptions, for the attitude FTC are                    have to travel a significant distance to reach the only considered
+based on the rigid dynamics of spacecraft and the flexible appendages’                        equilibrium even though they begin from very close to another equi-
+elastic displacements, and their effects are ignored. However, these                          librium [192]. This unwinding phenomenon may force the spacecraft
+vibrations contribute much to the controller’s performance and degrade                        to consume extra time and energy to reach the desired attitude position
+
+                                                                                          9
+M.N. Hasan et al.                                                                                                        Progress in Aerospace Sciences 130 (2022) 100806
+
+
+and thus perform an unnecessary large-angle maneuver even when                       faults, uncertainties, and disturbances. Furthermore, if sensor faults
+an alternate shorter and efficient path also exists to the same desired              or measurement noises occur in such situations, the control becomes
+attitude position to accomplish the control objective. A typical feature             more demanding and needs further investigation. Some more future
+of the approaches mentioned above is that the unwinding issue was                    research directions are stated in [200] related to combined spacecraft’s
+ignored when quaternions describe the spacecraft attitude. For a fault-              post-capture dynamics.
+free spacecraft, anti-unwinding attitude control is presented in [185,
+193,194] with system uncertainties and disturbance. Very few results                 5.1.8. Simultaneous consideration of angular attitude and velocity con-
+are reported for an under-fault spacecraft to avoid the unwinding                    straints
+phenomenon successfully, for instance, the FTC schemes in [195],                         The spacecraft’s attitude and angular velocity dynamics are con-
+and [196]. Hence, the spacecraft’s anti-unwinding and fault-tolerant                 strained in many applications and must be included while designing an
+attitude control need further investigations, especially with actuator               attitude FTC. Although some of the results mentioned above include the
+faults, saturation, disturbances, and uncertainties.                                 constraints on attitude, only the asymptotic convergence of trajectories
+                                                                                     is presented. Very few reported results simultaneously consider the
+5.1.4. Reduction in online computations and resource usage                           velocity and attitude constraints. The task becomes more demanding
+    Although the present computational abilities are sufficient to carry             when the fixed or finite-time convergence of trajectories is sought. One
+                                                                                     possible area for future investigations would be the realization of fixed
+complex computations in real-time, it is always desired to make the
+                                                                                     or finite-time convergence of trajectories with simultaneous considera-
+controller as simple as possible and reduce computational efforts. This
+                                                                                     tion of constraints on an under-fault spacecraft’s angular attitudes and
+is practically suitable for small-scale satellites with limited applications.
+                                                                                     velocities.
+For instance, a simple and practical design is presented in [197] to
+reduce the computational burden by designing a passive attitude FTC
+                                                                                     5.2. Future research orientations
+controller. Further investigations are needed to minimize the compu-
+tational efforts by employing accurate and efficient observers for fault                 Principally, designing a reliable and fault-tolerant spacecraft’s at-
+estimation.                                                                          titude control is a complex and interdisciplinary control problem. It
+                                                                                     involves a diverse range of engineering aspects such as modeling,
+5.1.5. Consideration of sensor noise and faults                                      computation, estimation, signal processing, etc. Moreover, modern
+    To the best of the author’s knowledge, very few results related to               space missions involve simultaneous fulfillment of various perfor-
+sensor faults or consideration of measurement noise are published, for               mance attributes. For instance, a spacecraft requires precise tracking,
+instance, [164,171–173,198]. The inaccurate measurement from the                     disturbance rejection, vibration suppression, and anti-saturation fault-
+sensor might be due to the faults or noises in the sensors. Although                 tolerant control during a docking mission. Similarly, a large control
+several attitude FTC designs, as mentioned earlier, bypass the need for              effort is needed to accomplish rapid maneuvers and slewing, which
+velocity sensors to minimize the sensor fault problem. However, the                  may result in actuator saturation or violation of spacecraft’s attitude (or
+attitude sensor’s measurement noise or faults should also be considered              velocity) constraints. In addition, the rapid change in angular velocity
+in realizing reliable and fault-tolerant attitude controller design for              during slewing will induce notable appendage-related vibrations affect-
+spacecraft.                                                                          ing the tracking accuracy of the spacecraft if they are not well-tackled
+                                                                                     by the controller.
+5.1.6. Spacecraft Formation Flying (SFF)                                                 Consequently, the key challenges and open problems discussed in
+    Recently, spacecraft formation flying (SFF) has emerged as a vital               the previous subsection are mutually coupled. They should be con-
+space application, and attitude synchronization among the members                    sidered with a composite framework that incorporates all the desired
+of the formation is an integral part of these SFF missions, such as                  performance characteristics while designing a fault-tolerant spacecraft’s
+surveillance [199]. All the formation spacecraft must maintain an accu-              attitude control scheme. Based on the assessment of the existing FTC
+rate relative distance among the formation to accomplish the mission.                schemes, several possible research prospects have been proposed and
+The attitude information of each member is shared among the whole                    epitomized in this sub-section.
+formation, and their orientations are relative to each other. If one or
+                                                                                         • Almost all the existing schemes are formulated on the spacecraft’s
+more spacecraft of such a formation experiences any fault, especially
+                                                                                           dynamical model. The calculation for required control action and
+the sensor fault, it may affect other members’ performance. A reliable
+                                                                                           estimation of fault (in case of fault-identification) solely relies
+FTC for SFF should be formulated to realize its missions successfully.
+                                                                                           on the information of the dynamical model. Any variation in
+It is an open area for further investigations along with the actuator’s
+                                                                                           the dynamical model due to fault or disturbances affects the
+saturation, switching topology, and collision avoidance subject to faults
+                                                                                           controller’s performance and fault uncertainty estimation. It is
+and uncertainties.
+                                                                                           naturally desirable to formulate a model-free control scheme to
+                                                                                           achieve reliable controller characteristics. For a fault-free flexible
+5.1.7. Proximity operations                                                                spacecraft, a guaranteed prescribed performance attitude control
+    Dealing with the spacecraft’s proximity operations is not yet fully                    is presented in [201] in the presence of external disturbances. It
+understood, and the theory is yet to mature. The shortfalls in a space-                    will be worthy of exploring the fault-tolerant capabilities of such
+craft’s performance during rendezvous-docking missions are other es-                       model-free attitude controllers in future research.
+sential aspects that need further insight and consideration. In the                      • Recently, event-triggered-based attitude control emerged as an
+future, these sorts of operations will be at large due to the number                       effective control strategy for efficient utilization of resources
+of spacecraft already orbiting or tumbling in space, and they will                         and reduction in control bandwidth. For a fault-free spacecraft,
+need their replacements or removal from the space environment. The                         event-triggered-based spacecraft’s attitude control is presented
+fault-compensated reliable control becomes more complicated when                           in [182,202,203]. However, when the spacecraft is experiencing
+the target spacecraft (or object) is non-cooperative. In such situations,                  some fault, exploring the event-triggered FTC for spacecraft will
+the transient performance of the spacecraft is equally vital as steady-                    be interesting. Recently, few results have been reported in [161,
+state performance. Most of the existing results are based on sluggish                      204,205] to realize an event-triggered-based FTC for spacecraft’s
+transient behavior, leading to an unwanted incident during docking.                        attitude control, which can serve as the foundation for future
+    Furthermore, when the chaser spacecraft reaches any                                    researches. Still, the theory is yet to mature and needs further
+non-cooperative target or debris tumbling in space, the relative atti-                     investigations to apply for a broader class of spacecraft and under
+tude and angular dynamics need further investigation, especially with                      different fault scenarios.
+
+                                                                                10
+M.N. Hasan et al.                                                                                                        Progress in Aerospace Sciences 130 (2022) 100806
+
+
+    • Although redundancy is an efficient way to improve the space-                    • In an active FTC scheme, when a fault occurs, there is always
+      craft’s reliability by providing multiple means of delivering de-                  some finite time needed by FDI to identify the fault before the
+      sired control effort, redundancy might also lower the reliability                  controller is reconfigured. During this time, the spacecraft is
+      of spacecraft due to the addition of extra failure modes, decrease                 steered by the nominal controller, which is not designed for
+      in transparency of design, and encouraging operational risk [206,                  the faulty scenario. So, the performance is somewhat compro-
+      207]. Moreover, it is difficult to equip the satellite with excessive              mised [216]. A possible solution to tackle this situation is to
+      redundant actuators or sensors due to physical or economic con-                    design a hybrid FTC strategy comprising both passive and ac-
+      straints in many small-scale satellites, such as micro-satellites or               tive FTC schemes, i.e., once the fault is detected, the controller
+      nano-satellites [208]. Further investigations need to be done in                   is switched to passive FTC controller till the time when FDI
+      such situations to improve the mission’s reliability by formulating                successfully identifies the fault and the corresponding recon-
+      less redundancy-dependent yet reliable attitude control strategies.                figurable control law is synthesized. Nevertheless, switching of
+    • With the increase in computational abilities during the last couple                steering control among these controllers will result in unfavorable
+      of decades, artificial intelligence (AI), machine learning (ML),                   switching transients that must be handled concurrently. One po-
+      deep learning (DL), and neural networks (NN) received much                         tential approach to tackle such transients in control is the scheme
+      attention. It impacted different study fields due to their self-                   presented in [217].
+      learning, self-decision-making ability in unforeseen conditions,
+      and eminent potential for devising a smart control policy for                6. Conclusion
+      complex systems. These systems can be trained to be highly
+      robust and operate without inertial parameter estimation. An AI                  Due to the complex structures, harsh operating conditions, and
+      or learning-based FTC offers superior performance than other                 challenging spacecraft goals, the probability of on-orbit failure, espe-
+      controllers, equipped with powerful estimation capability to ap-             cially of the spacecraft attitude control subsystem, is comparatively
+      proximate any unknown smooth nonlinear function with arbitrary               high. Nevertheless, no such ideal system can be declared fault-free
+      accuracy [209,210]. So, when AI or learning-based techniques                 and guarantee impeccability. Even worse, because of the inability to
+      are employed for fault identification, the advantages in terms of            repair the system, the consequences of faults are often dire. However,
+      learning, computation, analysis, and data statistics can effectively         the lessons learned from the past decades of spaceflights conclude that
+      be utilized to improve the efficiency of existing massive space-             besides adequate testing, redundancy, and flexibility of the design, an
+      craft’s in-orbit operational and test data, thereby shortening the           attitude controller’s intrinsic ability to tackle the faults is essential to
+      design cycle of spacecraft’s control systems, decreasing costs, and          accomplish successful and reliable spacecraft missions. FTC systems de-
+      improving the design efficiency [211]. Therefore, fully exploring            sign’s investigative scope and a brief review of spacecraft’s traditional
+      their advantages and competently combining them in the fault                 fault management approaches are first outlined by thoroughly under-
+      identification schemes for attitude control is worthy of further             standing the practical applications. The argument for the need for an
+      study.                                                                       autonomous FTC for spacecraft’s attitude control is established. A com-
+    • Conventional robust and AI/learning-based controllers are fruit-             prehensive and critical assessment of the state-of-the-art fault-tolerant
+      ful for smooth and reliable spacecraft operations. However, the              attitude control design for spacecraft is presented from two viewpoints;
+      existing AI/learning-based FTC schemes could only ensure the                 the controller-basis design techniques and the controller’s performance
+      asymptotic convergence of trajectories, which is undesirable in              characteristics. The review indicated that each existing spacecraft’s atti-
+      modern space applications. With further estimation accuracy en-              tude FTC design approach had its features and advantages to offer with
+      hancement, the finite-time AI-based fault-tolerant attitude control          some limitations. However, there is no unified framework for designing
+      scheme is one of the potential research prospects of spacecraft’s            simple spacecraft attitude control law with sufficient fault tolerance
+      attitude control. The idea proposed in recent schemes [111,188]              capability; instead, the desirable controller’s performance dictates its
+      may be extended to broader space applications under actua-                   design framework. Finally, the future directions of fault-tolerant atti-
+      tor/sensor fault scenarios and uncertainties. It is also worthy of           tude controller’s potential evolution are deduced by discussing various
+      paying attention to other bio-inspired (genetic) control algorithms          partially explored and critical open research questions.
+      as they can save computational and hardware resources without
+      compromising the control quality. Such a genetic algorithm-based             Declaration of competing interest
+      scheme is presented in [212] for spacecraft’s angular motion con-
+      trol and can be extended to fault-tolerant genetic algorithm-based               The authors declare that they have no known competing finan-
+      control for various space applications. However, the keystone,               cial interests or personal relationships that could have appeared to
+      needing further investigations, is developing a dynamic model                influence the work reported in this paper.
+      for the nervous system that is rational to biological ideas about
+      organisms and practically realizable.                                        References
+    • So far, most of the existing FTC schemes are based on robust
+      control theory principles, which are inherently the basis for the              [1] B. Xiao, Q. Hu, Y. Zhang, X. Huo, Fault-tolerant tracking control of spacecraft
+      attitude FTC design. Generally, there is a thumb rule of a trade-                  with attitude-only measurement under actuator failures, J. Guid. Control Dyn.
+                                                                                         37 (3) (2014) 838–849, http://dx.doi.org/10.2514/1.61369.
+      off between robust and optimal control performance. However,
+                                                                                     [2] China National Space Administration, Simulation image of Chang’e-5 lander and
+      for efficient and sustainable future space missions, the attitude                  ascender after landing on the moon. URL http://www.cnsa.gov.cn/n6758823/
+      controllers are also desired to be somewhat optimal in their per-                  n6758842/c6810700/content.html.
+      formance, to utilize the optimum energy resources to successfully              [3] S. Yin, B. Xiao, S.X. Ding, D. Zhou, A review on recent development of
+      carry out the missions and extend the spacecraft’s life. As the                    spacecraft attitude fault tolerant control system, IEEE Trans. Ind. Electron. 63
+                                                                                         (5) (2016) 3311–3320, http://dx.doi.org/10.1109/TIE.2016.2530789.
+      existing optimal control schemes primarily rely on the accuracy                [4] A.A. Amin, K.M. Hasan, A review of fault tolerant control systems: Advance-
+      of spacecraft’s dynamical model, a more profound analysis of                       ments and applications, Measurement 143 (2019) 58–68, http://dx.doi.org/10.
+      advanced and optimal control theory may be needed to realize                       1016/j.measurement.2019.04.083.
+      robust-cum-optimal controllers. It will be one of the eminent                  [5] M. Blanke, R. Izadi-Zamanabadi, S.A. Bøgh, C.P. Lunau, Fault-tolerant control
+                                                                                         systems - A holistic view, Control Eng. Pract. 5 (5) (1997) 693–702, http:
+      future aspects of spacecraft’s attitude FTC design. The optimal
+                                                                                         //dx.doi.org/10.1016/S0967-0661(97)00051-8.
+      schemes for a fault-free rigid spacecraft presented in [213–215]               [6] Y. Zhang, J. Jiang, Bibliographical review on reconfigurable fault-tolerant
+      can be extended to more practical, uncertain, and under fault                      control systems, Annu. Rev. Control 32 (2) (2008) 229–252, http://dx.doi.org/
+      spacecraft scenarios for reliable attitude control.                                10.1016/j.arcontrol.2008.03.008.
+
+
+                                                                              11
+M.N. Hasan et al.                                                                                                                     Progress in Aerospace Sciences 130 (2022) 100806
+
+
+  [7] W.R. Williamson, J.L. Speyer, V.T. Dang, J. Sharp, Fault detection and isolation          [33] S. Tafazoli, K. Khorasani, Nonlinear control and stability analysis of spacecraft
+      for deep space satellites, J. Guid. Control Dyn. 32 (5) (2009) http://dx.doi.org/              attitude recovery, IEEE Trans. Aerosp. Electron. Syst. 42 (3) (2006) 825–844,
+      10.2514/1.41319.                                                                               http://dx.doi.org/10.1109/TAES.2006.248187.
+  [8] R. Seidel, H.J. Herpel, R. Förstner, Innovative fault detection, isolation and re-        [34] P. Baldi, P. Castaldi, S. Simani, G. Bertoni, Fault diagnosis and control
+      covery - Project description, IFAC Proc. Vol. 46 (19) (2013) 96–100, http://dx.                reconfiguration for satellite reaction wheels, in: Conference on Control and
+      doi.org/10.3182/20130902-5-DE-2040.00117, URL https://www.sciencedirect.                       Fault-Tolerant Systems, SysTol’10 - Final Program and Book of Abstracts, IEEE,
+      com/science/article/pii/S1474667015363047.                                                     2010, pp. 143–148, http://dx.doi.org/10.1109/SYSTOL.2010.5676066.
+  [9] D. Wang, F. Fu, W. Li, Y. Tu, C. Liu, W. Liu, A review of the diagnosability              [35] A.D. Ruiter, A fault-tolerant magnetic spin stabilizing controller for the JC2Sat-
+      of control systems with applications to spacecraft, Annu. Rev. Control 49                      FF mission, Acta Astronaut. 68 (1–2) (2011) 160–171, http://dx.doi.org/10.
+      (2020) 212–229, http://dx.doi.org/10.1016/j.arcontrol.2020.03.004, URL https:                  1016/j.actaastro.2010.07.012.
+      //www.sciencedirect.com/science/article/pii/S1367578820300109.                            [36] G. Macala, A. Lee, E. Wang, Feasibility study of two candidate reaction
+ [10] Z. Gao, C. Cecati, S.X. Ding, A survey of fault diagnosis and fault-tolerant                   wheel/thruster hybrid control architecture designs for the Cassini spacecraft, in:
+      techniques-part I: Fault diagnosis with model-based and signal-based ap-                       AIAA Guidance, Navigation, and Control Conference, in: Guidance, Navigation,
+      proaches, IEEE Trans. Ind. Electron. 62 (6) (2015) 3757–3767, http://dx.doi.                   and Control and Co-located Conferences, American Institute of Aeronautics and
+      org/10.1109/TIE.2015.2417501.                                                                  Astronautics, 2012, http://dx.doi.org/10.2514/6.2012-4541.
+ [11] Z. Gao, C. Cecati, S.X. Ding, A survey of fault diagnosis and fault-tolerant              [37] A. Noumi, M. Takahashi, Fault-tolerant attitude control systems for a satellite
+      techniques-part II: Fault diagnosis with knowledge-based and hybrid/active                     equipped with control moment gyros, in: AIAA Guidance, Navigation, and
+      approaches, IEEE Trans. Ind. Electron. 62 (6) (2015) 3768–3774, http://dx.                     Control Conference, 2013, pp. 3–14, http://dx.doi.org/10.2514/6.2013-5119.
+      doi.org/10.1109/TIE.2015.2419013.                                                         [38] B. Xiao, Q. Hu, D. Wang, E.K. Poh, Attitude tracking control of rigid spacecraft
+ [12] B. L. Keith, R.D. Leach, M.B. Alexander, Spacecraft System Failures and                        with actuator misalignment and fault, IEEE Trans. Control Syst. Technol. 21
+      Anomalies Attributed to the Natural Space Environment, Tech. rep., NASA                        (6) (2013) 2360–2366, http://dx.doi.org/10.1109/TCST.2012.2237403.
+      TECHNICAL REPORT NASA-RP-1390, 1996, p. 56.                                               [39] B. Xiao, Q. Hu, Y. Zhang, Adaptive sliding mode fault tolerant attitude tracking
+ [13] K. Gunter D, Spaceflight accidents, 2021, (accessed on 2021-12-01). URL https:                 control for flexible spacecraft under actuator saturation, IEEE Trans. Control
+      //space.skyrocket.de/doc_sat/accidents_crewed.htm.                                             Syst. Technol. 20 (6) (2012) 1605–1612, http://dx.doi.org/10.1109/TCST.2011.
+ [14] D.M. Harland, R. Lorenz, Attitude control system failures, in: D.M. Harland,                   2169796.
+      R.D. Lorenz (Eds.), Space Systems Failures, Praxis, New York, NY, 2005, pp.               [40] Y. Liang, S. Xu, C. Tsai, Study of VSC reliable designs with application to
+      211–226, http://dx.doi.org/10.1007/978-0-387-27961-9_11.                                       spacecraft attitude stabilization, IEEE Trans. Control Syst. Technol. 15 (2)
+ [15] D.M. Harland, R. Lorenz, The Chinese experience, in: D.M. Harland, R.D. Lorenz                 (2007) 332–338, http://dx.doi.org/10.1109/TCST.2006.883186.
+      (Eds.), Space Systems Failures, Praxis, New York, NY, 2005, pp. 135–143,                  [41] K.D. Kumar, Fault tolerant reconfigurable satellite formations using adaptive
+      http://dx.doi.org/10.1007/978-0-387-27961-9_7.                                                 variable structure techniques, J. Guid. Control Dyn. 33 (3) (2010) 969–984,
+ [16] C. Stephen, Attitude control failures led to break-up of Japanese astronomy                    http://dx.doi.org/10.2514/1.38580.
+      satellite, 2021, (accessed on 2021-12-08). URL https://spaceflightnow.com/                [42] Godard, K.D. Kumar, Robust attitude stabilization of spacecraft subject to
+      2016/04/18/spinning-japanese-astronomy-satellite-may-be-beyond-saving/.                        actuator failures, Acta Astronaut. 68 (7–8) (2011) 1242–1259, http://dx.doi.
+ [17] M. Tafazoli, A study of on-orbit spacecraft failures, Acta Astronaut. 64 (2)                   org/10.1016/j.actaastro.2010.10.017.
+      (2009) 195–205, http://dx.doi.org/10.1016/j.actaastro.2008.07.019, URL https:             [43] S. Varma, K.D. Kumar, Fault tolerant satellite attitude control using solar
+      //www.sciencedirect.com/science/article/pii/S0094576508003019.                                 radiation pressure based on nonlinear adaptive sliding mode, Acta Astronaut.
+ [18] C.D. Persis, A. Isidori, A geometric approach to nonlinear fault detection and                 66 (3–4) (2010) 486–500, http://dx.doi.org/10.1016/j.actaastro.2009.07.027.
+      isolation, IEEE Trans. Automat. Control 46 (6) (2001) 853–865.                            [44] M. Post, J. LI, R. Lee, Nanosatellite air bearing tests of fault-tolerant sliding
+ [19] S. Yin, X. Zhu, S. Member, Intelligent particle filter and its application to                  mode attitude control with unscented Kalman filter, in: AIAA Guidance,
+      fault detection of nonlinear system, IEEE Trans. Ind. Electron. 62 (6) (2015)                  Navigation, and Control Conference, in: Guidance, Navigation, and Control and
+      3852–3861.                                                                                     Co-located Conferences, American Institute of Aeronautics and Astronautics,
+ [20] M. Blanke, M. Kinnaert, J. Lunze, M. Staroswiecki, Diagnosis and Fault-Tolerant                2012, http://dx.doi.org/10.2514/6.2012-5040.
+      Control (FTC), third ed., Springer, 2016, pp. 1–695, http://dx.doi.org/10.1007/           [45] J. Fu, M. Liu, L. Chen, Fault-tolerant control for flexible spacecraft attitude
+      978-3-662-47943-8.                                                                             maneuver via integral sliding mode control approach, in: Proceedings - 2015
+ [21] N. Hassan, T. Didier, Fault-Tolerant Control Systems: Design and Practical                     Chinese Automation Congress, CAC 2015, IEEE, 2016, pp. 1750–1754, http:
+      Applications, Springer, 2009.                                                                  //dx.doi.org/10.1109/CAC.2015.7382786.
+ [22] A. Esna Ashari, R. Nikoukhah, S.L. Campbell, Effects of feedback on active                [46] M. Krstic, I. Kanellakopoulos, P.V. Kokotovic, Nonlinear and Adaptive Control
+      fault detection, Automatica 48 (5) (2012) 866–872, http://dx.doi.org/10.1016/                  Design, John Wiley & Sons, Hoboken, NJ, UA, 1995.
+      j.automatica.2012.02.020, URL https://www.sciencedirect.com/science/article/              [47] J.D. Boskovic, S.E. Bergstrom, R.K. Mehra, Robust integrated flight control
+      pii/S0005109812000714.                                                                         design under failures, damage, and state-dependent disturbances, J. Guid.
+ [23] J. Jiang, X. Yu, Fault-tolerant control systems: A comparative study between                   Control Dyn. 28 (5) (2005) 902–917, http://dx.doi.org/10.2514/1.11272.
+      active and passive approaches, Annu. Rev. Control 36 (1) (2012) 60–72,                    [48] Q. Hu, L. Xiao, C. Wang, Adaptive fault-tolerant attitude tracking control for
+      http://dx.doi.org/10.1016/j.arcontrol.2012.03.005.                                             spacecraft with time-varying inertia uncertainties, Chin. J. Aeronaut. 32 (3)
+ [24] P. Goupil, AIRBUS state of the art and practices on FDI and FTC in flight control              (2019) 674–687, http://dx.doi.org/10.1016/j.cja.2018.12.015.
+      system, Control Eng. Pract. 19 (6) (2011) 524–539, http://dx.doi.org/10.1016/             [49] W. Cai, X.H. Liao, Y.D. Song, Indirect robust adaptive fault-tolerant control for
+      j.conengprac.2010.12.009, URL https://www.sciencedirect.com/science/article/                   attitude tracking of spacecraft, J. Guid. Control Dyn. 31 (5) (2008) 1456–1463,
+      pii/S0967066110002704.                                                                         http://dx.doi.org/10.2514/1.31158.
+ [25] C. Edwards, T. Lombaerts, S. Hafid, Fault Tolerant Flight Control, Springer,              [50] Y. Jiang, Q. Hu, G. Ma, Adaptive backstepping fault-tolerant control for flexible
+      2010, pp. 1–586.                                                                               spacecraft with unknown bounded disturbances and actuator failures, ISA Trans.
+ [26] B. Jiang, K. Zhang, C. Liu, H. Yang, Fault diagnosis and accommodation                         49 (1) (2010) 57–69, http://dx.doi.org/10.1016/j.isatra.2009.08.003.
+      with flight control applications, J. Control Decis. 7 (1) (2020) 24–43, http:             [51] A.M. Zou, K.D. Kumar, Adaptive fuzzy fault-tolerant attitude control of space-
+      //dx.doi.org/10.1080/23307706.2019.1686434.                                                    craft, Control Eng. Pract. 19 (1) (2011) 10–21, http://dx.doi.org/10.1016/j.
+ [27] B. Robertson, E. Stoneking, Satellite GN&C anomaly trends, in: 26th Annual                     conengprac.2010.08.005.
+      AAS Guidance and Control Conference, 2003, pp. 1–15.                                      [52] A.M. Zou, K.D. Kumar, Robust attitude coordination control for spacecraft
+ [28] A. Nasir, E. Atkins, Fault tolerance for spacecraft attitude management, in: AIAA              formation flying under actuator failures, J. Guid. Control Dyn. 35 (4) (2012)
+      Guidance, Navigation, and Control Conference, AIAA, 2010, http://dx.doi.org/                   1247–1255, http://dx.doi.org/10.2514/1.55218.
+      10.2514/6.2010-8301.                                                                      [53] Y. Ma, B. Jiang, G. Tao, Y. Cheng, Actuator failure compensation and attitude
+ [29] D.K. Gunter, EchoStar 5, 6/ciel 1/Bermudasat 1, 2021, (accessed on                             control for rigid satellite by adaptive control using quaternion feedback, J.
+      2021-12-01). URL https://space.skyrocket.de/doc_sdat/echostar-5.htm.                           Franklin Inst. B 351 (1) (2014) 296–314, http://dx.doi.org/10.1016/j.jfranklin.
+ [30] M. Hecht, E. Fiorentino, Causes and effects of spacecraft failures, Qual. Reliab.              2013.08.028.
+      Eng. Int. 4 (1) (1988) 11–20, http://dx.doi.org/10.1002/qre.4680040107.                   [54] D. Bustan, S.K. Sani, N. Pariz, Adaptive fault-tolerant spacecraft attitude control
+ [31] R.H. Chen, H.K. Ng, J.L. Speyer, L.S. Guntur, R. Carpenter, Health monitoring                  design with transient response control, IEEE/ASME Trans. Mechatronics 19 (4)
+      of a satellite system, in: Collection of Technical Papers - AIAA Guidance,                     (2014) 1404–1411, http://dx.doi.org/10.1109/TMECH.2013.2288314.
+      Navigation, and Control Conference, Vol. 3 (August), 2004, pp. 1765–1786,                 [55] X. Yao, G. Tao, Y. Ma, R. Qi, Adaptive actuator failure compensation design for
+      http://dx.doi.org/10.2514/6.2004-5121.                                                         spacecraft attitude control, IEEE Trans. Aerosp. Electron. Syst. 52 (3) (2016)
+ [32] P. Baldi, P. Castaldi, N. Mimmo, S. Simani, A new aerodynamic decoupled                        1021–1034, http://dx.doi.org/10.1109/TAES.2016.130802.
+      frequential FDIR methodology for satellite actuator faults, Internat. J. Adapt.           [56] D. Thakur, S. Srikant, M.R. Akella, Adaptive attitude-tracking control of
+      Control Signal Process. 28 (9) (2014) 812–832, http://dx.doi.org/10.1002/acs.                  spacecraft with uncertain time-varying inertia parameters, J. Guid. Control Dyn.
+      2379.                                                                                          38 (1) (2015) 41–52, http://dx.doi.org/10.2514/1.G000457.
+
+
+                                                                                           12
+M.N. Hasan et al.                                                                                                                         Progress in Aerospace Sciences 130 (2022) 100806
+
+
+ [57] J.F. Shi, S. Ulrich, A. Allen, Spacecraft adaptive attitude control with application         [84] Q. Hu, Y. Shi, X. Shao, Adaptive fault-tolerant attitude control for satellite
+      to space station free-flyer robotic capture, in: AIAA Guidance, Navigation, and                   reorientation under input saturation, Aerosp. Sci. Technol. 78 (2018) 171–182,
+      Control Conference, 2013, 2015, pp. 1–23, http://dx.doi.org/10.2514/6.2015-                       http://dx.doi.org/10.1016/j.ast.2018.04.015.
+      1780.                                                                                        [85] Q. Hu, X. Shao, L. Guo, Adaptive fault-tolerant attitude tracking control of
+ [58] Y. Ma, B. Jiang, G. Tao, Y. Cheng, Uncertainty decomposition-based fault-                         spacecraft with prescribed performance, IEEE/ASME Trans. Mechatronics 23
+      tolerant adaptive control of flexible spacecraft, IEEE Trans. Aerosp. Electron.                   (1) (2018) 331–341, http://dx.doi.org/10.1109/TMECH.2017.2775626.
+      Syst. 51 (2) (2015) 1053–1068, http://dx.doi.org/10.1109/TAES.2014.130032.                   [86] Z.G. Zhou, Y.A. Zhang, X.N. Shi, D. Zhou, Robust attitude tracking for rigid
+ [59] M. Li, M. Hou, C. Yin, Adaptive attitude stabilization control design for                         spacecraft with prescribed transient performance, Internat. J. Control 90 (11)
+      spacecraft under physical limitations, J. Guid. Control Dyn. 39 (9) (2016)                        (2017) 2471–2479, http://dx.doi.org/10.1080/00207179.2016.1250955.
+      2176–2180, http://dx.doi.org/10.2514/1.G000348.                                              [87] X. Shao, Q. Hu, Y. Shi, B. Jiang, Fault-tolerant prescribed performance attitude
+ [60] Y. Ma, G. Tao, B. Jiang, Y. Cheng, Multiple-model adaptive control for                            tracking control for spacecraft under input saturation, IEEE Trans. Control
+      spacecraft under sign errors in actuator response, J. Guid. Control Dyn. 39                       Syst. Technol. 28 (2) (2018) 574–582, http://dx.doi.org/10.1109/TCST.2018.
+      (3) (2016) 628–641, http://dx.doi.org/10.2514/1.G001352.                                          2875426.
+ [61] L. Sun, Constrained adaptive fault-tolerant attitude tracking control of rigid               [88] H. Lee, Y. Kim, Fault-tolerant control scheme for satellite attitude control
+      spacecraft, Adv. Space Res. 63 (7) (2019) 2229–2238, http://dx.doi.org/10.                        system, IET Control Theory Appl. 4 (8) (2010) 1436–1450, http://dx.doi.org/
+      1016/j.asr.2018.12.021.                                                                           10.1049/iet-cta.2009.0159.
+ [62] K.D. Kumar, Godard, N. Abreu, M. Sinha, Fault-tolerant attitude control of                   [89] L. Zhao, Y. Jia, Finite-time attitude tracking control for a rigid spacecraft
+      miniature satellites using reaction wheels, Acta Astronaut. 151 (May) (2018)                      using time-varying terminal sliding mode techniques, Internat. J. Control 88
+      206–216, http://dx.doi.org/10.1016/j.actaastro.2018.05.004.                                       (6) (2015) 1150–1162, http://dx.doi.org/10.1080/00207179.2014.996854.
+ [63] T.A. Johansen, T.I. Fossen, Control allocation — A survey, Automatica 49 (5)                 [90] Q. Hu, X. Huo, B. Xiao, Reaction wheel fault tolerant control for spacecraft
+      (2013) 1087–1103, http://dx.doi.org/10.1016/j.automatica.2013.01.035.                             attitude stabilization with finite-time convergence, Internat. J. Robust Nonlinear
+ [64] J. Jin, Modified pseudoinverse redistribution methods for redundant controls                      Control 23 (15) (2013) 1737–1752, http://dx.doi.org/10.1002/rnc.2924.
+      allocation, J. Guid. Control Dyn. 28 (5) (2005) 1076–1079.                                   [91] H. Du, S. Li, Finite-time attitude stabilization for a spacecraft using homoge-
+ [65] O. Härkegård, Dynamic control allocation using constrained quadratic                              neous method, J. Guid. Control Dyn. 35 (3) (2012) 740–748, http://dx.doi.org/
+      programming, J. Guid. Control Dyn. 27 (6) (2004) 1028–1034.                                       10.2514/1.56262.
+ [66] O. Härkegård, S.T. Glad, Resolving actuator redundancy-optimal control vs.                   [92] C. Pukdeboon, P. Siricharuanun, Nonsingular terminal sliding mode based
+      control allocation, Automatica 41 (1) (2005) 137–144.                                             finite-time control for spacecraft attitude tracking, Int. J. Control Autom. Syst.
+ [67] P. Baldi, M. Blanke, P. Castaldi, N. Mimmo, S. Simani, Adaptive FTC based                         12 (3) (2014) 530–540, http://dx.doi.org/10.1007/s12555-013-0247-x.
+      on control allocation and fault accommodation for satellite reaction wheels, in:
+                                                                                                   [93] K. Lu, Y. Xia, Adaptive attitude tracking control for rigid spacecraft with finite-
+      Conference on Control and Fault-Tolerant Systems, SysTol, Vol. 2016-Novem,
+                                                                                                        time convergence, Automatica 49 (12) (2013) 3591–3599, http://dx.doi.org/
+      IEEE, 2016, pp. 672–677, http://dx.doi.org/10.1109/SYSTOL.2016.7739826.
+                                                                                                        10.1016/j.automatica.2013.09.001.
+ [68] P.A. Servidia, R.S. Peña, Spacecraft thruster control allocation problems, IEEE
+                                                                                                   [94] A. Al-Ghanimi, J. Zheng, Z. Man, A fast non-singular terminal sliding mode
+      Trans. Automat. Control 50 (2) (2005) 245–249.
+                                                                                                        control based on perturbation estimation for piezoelectric actuators systems, In-
+ [69] J. Jin, B. Park, Y. Park, M.J. Tahk, Attitude control of a satellite with redundant
+                                                                                                        ternat. J. Control 90 (3) (2017) 480–491, http://dx.doi.org/10.1080/00207179.
+      thrusters, Aerosp. Sci. Technol. 10 (6) (2006) 644–651.
+                                                                                                        2016.1185157.
+ [70] P.A. Servidia, Control allocation for gimballed/fixed thrusters, Acta Astronaut.
+                                                                                                   [95] A.M. Zou, K.D. Kumar, Finite-time attitude control for rigid spacecraft subject
+      66 (2010) 587–594.
+                                                                                                        to actuator saturation, Nonlinear Dynam. 96 (2) (2019) 1017–1035, http:
+ [71] F. Curti, M. Romano, R. Bevilacqua, Lyapunov-based thrusters’ selection for
+                                                                                                        //dx.doi.org/10.1007/s11071-019-04836-7.
+      spacecraft control: Analysis and experimentation, J. Guid. Control Dyn. 33 (4)
+                                                                                                   [96] Q. Shen, D. Wang, S. Zhu, E.K. Poh, T. Liu, Adaptive robust fault-tolerant
+      (2010) 1143–1160, http://dx.doi.org/10.2514/1.47296.
+                                                                                                        attitude control of spacecraft with finite-time convergence, in: 2013 9th Asian
+ [72] Q. Shen, D. Wang, S. Zhu, E.K. Poh, Control allocation based faulttolerant
+                                                                                                        Control Conference, ASCC 2013, 2013, http://dx.doi.org/10.1109/ASCC.2013.
+      control design for spacecraft attitude tracking, in: Proceedings of the 53rd
+                                                                                                        6606131.
+      Annual Conference of Decision and Control, CDC ’14, 2014, pp. 4983–4988.
+                                                                                                   [97] K. Lu, Y. Xia, Finite-time fault-tolerant control for rigid spacecraft with actuator
+ [73] A. Zhang, Y. Wang, Z. Zhang, H.R. Karimi, Robust control allocation for
+                                                                                                        saturations, IET Control Theory Appl. 7 (11) (2013) 1529–1539, http://dx.doi.
+      spacecraft attitude stabilization under actuator faults and uncertainty, Math.
+                                                                                                        org/10.1049/iet-cta.2012.1031.
+      Probl. Eng. (2014) 789327.
+                                                                                                   [98] K. Lu, Y. Xia, Finite-time attitude control for rigid spacecraft-based on adaptive
+ [74] Q. Shen, D. Wang, S. Zhu, E.K. Poh, Inertia-free fault-tolerant spacecraft
+                                                                                                        super-twisting algorithm, IET Control Theory Appl. 8 (15) (2014) 1465–1477,
+      attitude tracking using control allocation, Automatica 62 (2015) 114–121,
+                                                                                                        http://dx.doi.org/10.1049/iet-cta.2013.0885.
+      http://dx.doi.org/10.1016/j.automatica.2015.09.027.
+                                                                                                   [99] D. Ran, X. Chen, T. Sheng, Adaptive fuzzy fault-tolerant control for rigid space-
+ [75] Q. Hu, X. Tan, M.R. Akella, Closed-loop-based control allocation for spacecraft
+                                                                                                        craft attitude maneuver with finite-time convergence, Proc. Inst. Mech. Eng. G
+      attitude stabilization with actuator fault, J. Guid. Control Dyn. 41 (4) (2018)
+                                                                                                        230 (5) (2016) 779–792, http://dx.doi.org/10.1177/0954410015597461.
+      943–952, http://dx.doi.org/10.2514/1.G003028.
+ [76] J. Huo, T. Meng, Z. Jin, Adaptive backstepping sliding mode fault tolerant                  [100] B. Huo, Y. Xia, K. Lu, M. Fu, Adaptive fuzzy finite-time fault-tolerant attitude
+      control for satellite attitude under actuator faults, IOP Conf. Ser.: Mater. Sci.                 control of rigid spacecraft, J. Franklin Inst. B 352 (10) (2015) 4225–4246,
+      Eng. 608 (1) (2019) http://dx.doi.org/10.1088/1757-899X/608/1/012040.                             http://dx.doi.org/10.1016/j.jfranklin.2015.05.042.
+ [77] Q. Shen, D. Wang, S. Zhu, E.K. Poh, Robust control allocation for spacecraft                [101] H. Gui, G. Vukovich, Adaptive integral sliding mode control for spacecraft
+      attitude tracking under actuator faults, IEEE Trans. Control Syst. Technol. 25                    attitude tracking with actuator uncertainty, J. Franklin Inst. B 352 (12) (2015)
+      (3) (2017) 1068–1075, http://dx.doi.org/10.1109/TCST.2016.2574763.                                5832–5852, http://dx.doi.org/10.1016/j.jfranklin.2015.10.001.
+ [78] M. Wang, J. Yang, Adaptive control allocation for flight systems with stuck                 [102] B. Xiao, Q. Hu, Y. Zhang, Finite-time attitude tracking of spacecraft with fault-
+      actuator failures, in: 2019 Chinese Control and Decision Conference (CCDC),                       tolerant capability, IEEE Trans. Control Syst. Technol. 23 (4) (2015) 1338–1350,
+      2019, pp. 3933–3937, http://dx.doi.org/10.1109/CCDC.2019.8833424.                                 http://dx.doi.org/10.1109/TCST.2014.2364124.
+ [79] M. Wang, J. Yang, G. Qin, Y. Yan, Adaptive fault-tolerant control with control              [103] Q. Shen, D. Wang, S. Zhu, E.K. Poh, Finite-time fault-tolerant attitude stabiliza-
+      allocation for flight systems with severe actuator failures and input saturation,                 tion for spacecraft with actuator saturation, IEEE Trans. Aerosp. Electron. Syst.
+      in: 2019 American Control Conference, IEEE, 2019, pp. 5134–5139, http:                            51 (3) (2015) 2390–2405, http://dx.doi.org/10.1109/TAES.2015.130725.
+      //dx.doi.org/10.1109/ACC.2013.6580636.                                                      [104] D. Ran, B. Xiao, T. Sheng, X. Chen, Adaptive finite time control for space-
+ [80] R. Qi, W. Su, Y. Meng, Fault-tolerant attitude controller design for deep                         craft attitude maneuver based on second-order terminal sliding mode, Proc.
+      space probe via adaptive fast terminal sliding mode control, J. Dyn. Syst.                        Inst. Mech. Eng. G 231 (8) (2017) 1415–1427, http://dx.doi.org/10.1177/
+      Meas. Control Trans. ASME 141 (9) (2019) 1–11, http://dx.doi.org/10.1115/1.                       0954410016654177.
+      4042548.                                                                                    [105] Y. Xia, J. Zhang, K. Lu, N. Zhou, Finite-time tracking control of rigid spacecraft
+ [81] X. Yang, S.S. Ge, W. He, Dynamic modelling and adaptive robust tracking                           under actuator saturations and faults, Adv. Ind. Control 13 (1) (2019) 141–169,
+      control of a space robot with two-link flexible manipulators under unknown                        http://dx.doi.org/10.1007/978-981-13-1373-8_8.
+      disturbances, Internat. J. Control 91 (4) (2018) 969–988, http://dx.doi.org/10.             [106] Z. Han, K. Zhang, T. Yang, M. Zhang, Spacecraft fault-tolerant control using
+      1080/00207179.2017.1300837.                                                                       adaptive non-singular fast terminal sliding mode, IET Control Theory Appl. 10
+ [82] Q. Liu, M. Liu, J. Yu, Adaptive fault-tolerant control for attitude tracking                      (16) (2016) 1991–1999, http://dx.doi.org/10.1049/iet-cta.2016.0044.
+      of flexible spacecraft with limited data transmission, IEEE Trans. Syst. Man                [107] H. Gui, G. Vukovich, Adaptive fault-tolerant spacecraft attitude control using a
+      Cybern.: Syst. (2019) 1–9, http://dx.doi.org/10.1109/TSMC.2019.2932225.                           novel integral terminal sliding mode, Internat. J. Robust Nonlinear Control 27
+ [83] C.P. Bechlioulis, G.A. Rovithakis, Robust adaptive control of feedback lin-                       (16) (2017) 3174–3196, http://dx.doi.org/10.1002/rnc.3733.
+      earizable MIMO nonlinear systems with prescribed performance, IEEE Trans.                   [108] Q. Hu, X. Tan, M.R. Akella, Finite-time fault-tolerant spacecraft attitude control
+      Automat. Control 53 (9) (2008) 2090–2099, http://dx.doi.org/10.1109/TAC.                          with torque saturation, J. Guid. Control Dyn. 40 (10) (2017) 2524–2537,
+      2008.929402.                                                                                      http://dx.doi.org/10.2514/1.G002191.
+
+
+                                                                                             13
+M.N. Hasan et al.                                                                                                                      Progress in Aerospace Sciences 130 (2022) 100806
+
+
+[109] S. Gao, Y. Jing, X. Liu, S. Zhang, Finite-time attitude-tracking control for rigid        [132] D. Lee, K.D. Kumar, M. Sinha, Fault detection and recovery of spacecraft for-
+      spacecraft with actuator failures and saturation constraints, Internat. J. Robust               mation flying using nonlinear observer and reconfigurable controller, Acta As-
+      Nonlinear Control 30 (5) (2020) 1903–1937, http://dx.doi.org/10.1002/rnc.                       tronaut. 97 (2014) 58–72, http://dx.doi.org/10.1016/j.actaastro.2013.12.002,
+      4863.                                                                                           URL https://www.sciencedirect.com/science/article/pii/S009457651300444X.
+[110] S. Gao, Y. Jing, Finite-time fault-tolerant attitude-tracking control for rigid           [133] B. Xiao, Q. Hu, D. Wang, Spacecraft attitude fault tolerant control with terminal
+      spacecraft, in: Proceedings of the 31st Chinese Control and Decision Conference,                sliding-mode observer, J. Aerosp. Eng. 28 (1) (2015) 1–15, http://dx.doi.org/
+      CCDC 2019, IEEE, 2019, pp. 2822–2827, http://dx.doi.org/10.1109/CCDC.                           10.1061/(ASCE)AS.1943-5525.0000331.
+      2019.8832413.                                                                             [134] S. Zhu, D. Wang, Q. Shen, E.K. Poh, Satellite attitude stabilization control
+[111] S. Gao, Y. Jing, X. Liu, G.M. Dimirovski, Chebyshev neural network-based                        with actuator faults, J. Guid. Control Dyn. 40 (5) (2017) 1300–1309, http:
+      attitude-tracking control for rigid spacecraft with finite-time convergence,                    //dx.doi.org/10.2514/1.G001922.
+      Internat. J. Control (2020) 1–18, http://dx.doi.org/10.1080/00207179.2020.                [135] A. Zhang, Q. Hu, Y. Zhang, Observer-based attitude control for satellite under
+      1734235.                                                                                        actuator fault, J. Guid. Control Dyn. 38 (4) (2015) 806–811, http://dx.doi.org/
+[112] A. Polyakov, Nonlinear feedback design for fixed-time stabilization of linear                   10.2514/1.G000625.
+      control systems, IEEE Trans. Automat. Control 57 (8) (2012) 2106–2110,                    [136] W. Chen, M. Saif, Observer-based fault diagnosis of satellite systems subject
+      http://dx.doi.org/10.1109/TAC.2011.2179869.                                                     to time-varying thruster faults, J. Dyn. Syst. Meas. Control 129 (May) (2007)
+[113] B. Jiang, Q. Hu, M.I. Friswell, Fixed-time attitude control for rigid spacecraft                352–356, http://dx.doi.org/10.1115/1.2719773.
+      with actuator saturation and faults, IEEE Trans. Control Syst. Technol. 24 (5)            [137] A. Cristofaro, T.A. Johansen, Fault tolerant control allocation using unknown
+      (2016) 1892–1898, http://dx.doi.org/10.1109/TCST.2016.2519838.                                  input observers, Automatica 50 (7) (2014) 1891–1897, http://dx.doi.org/10.
+[114] C.C. Chen, S.S.D. Xu, Y.W. Liang, Study of nonlinear integral sliding mode fault-               1016/j.automatica.2014.05.007, URL https://www.sciencedirect.com/science/
+      tolerant control, IEEE/ASME Trans. Mechatronics 21 (2) (2016) 1160–1168,                        article/pii/S0005109814001824.
+      http://dx.doi.org/10.1109/TMECH.2015.2474700.                                             [138] J. Zhang, D. Ye, Z. Sun, C. Liu, Extended state observer based robust adaptive
+[115] X.N. Shi, Y.A. Zhang, D. Zhou, Z.G. Zhou, Global fixed-time attitude tracking                   control on SE(3) for coupled spacecraft tracking maneuver with actuator
+      control for the rigid spacecraft with actuator saturation and faults, Acta Astro-               saturation and misalignment, Acta Astronaut. 143 (2018) 221–233, http://dx.
+      naut. 155 (May 2018) (2019) 325–333, http://dx.doi.org/10.1016/j.actaastro.                     doi.org/10.1016/j.actaastro.2017.11.034, URL https://www.sciencedirect.com/
+      2018.11.026.                                                                                    science/article/pii/S0094576517305878.
+[116] X.N. Shi, Z.G. Zhou, D. Zhou, Adaptive fault-tolerant attitude tracking control           [139] Q. Hu, B. Li, M.I. Friswell, Observer-based fault diagnosis incorporating online
+      of rigid spacecraft on Lie group with fixed-time convergence, Asian J. Control                  control allocation for spacecraft attitude stabilization under actuator failures,
+      22 (1) (2020) 423–435, http://dx.doi.org/10.1002/asjc.1888.                                     J. Astronaut. Sci. 60 (2) (2013) 211–236, http://dx.doi.org/10.1007/s40295-
+[117] Z. Wang, Y. Su, L. Zhang, Fixed-time fault-tolerant attitude tracking control                   014-0021-1.
+      for rigid spacecraft, J. Dyn. Syst. Meas. Control 142 (2) (2020) 1–11, http:              [140] Q. Jia, W. Chen, Y. Zhang, H. Li, Integrated design of fault reconstruction
+      //dx.doi.org/10.1115/1.4045360.                                                                 and fault-tolerant control against actuator faults using learning observers,
+[118] M. Golestani, S. Majid, S. Mobayen, Fixed-time control for high-precision                       Internat. J. Systems Sci. 47 (16) (2016) 3749–3761, http://dx.doi.org/10.1080/
+      attitude stabilization of flexible spacecraft, Eur. J. Control 57 (2021) 222–231.               00207721.2015.1118773.
+[119] A. Flores-Abad, O. Ma, K. Pham, S. Ulrich, A review of space robotics                     [141] Q. Dong, Q. Zong, B. Tian, C. Zhang, W. Liu, Adaptive disturbance observer-
+      technologies for on-orbit servicing, Prog. Aerosp. Sci. 68 (2014) 1–26, http:                   based finite-time continuous fault-tolerant control for reentry RLV, Internat.
+      //dx.doi.org/10.1016/j.paerosci.2014.03.002, URL https://www.sciencedirect.                     J. Robust Nonlinear Control 27 (18) (2017) 4275–4295, http://dx.doi.org/10.
+      com/science/article/pii/S0376042114000347.                                                      1002/rnc.3796.
+[120] P. Huang, M. Wang, Z. Meng, F. Zhang, Z. Liu, Attitude takeover control                   [142] K. Xia, W. Huo, Disturbance observer based fault-tolerant control for coopera-
+      for post-capture of target spacecraft using space robot, Aerosp. Sci. Technol.                  tive spacecraft rendezvous and docking with input saturation, Nonlinear Dynam.
+      51 (2016) 171–180, http://dx.doi.org/10.1016/j.ast.2016.02.006, URL https:                      88 (4) (2017) 2735–2745, http://dx.doi.org/10.1007/s11071-017-3407-3.
+      //www.sciencedirect.com/science/article/pii/S1270963816300517.                            [143] G. Niu, Q. Hu, L. Guo, Iterative disturbance observer design for spacecraft
+[121] M. Shan, J. Guo, E. Gill, Review and comparison of active space debris                          fault-tolerant control with actuator failure, in: Chinese Control Conference, CCC,
+      capturing and removal methods, Prog. Aerosp. Sci. 80 (2016) 18–32, http:                        2017, pp. 9448–9453, http://dx.doi.org/10.23919/ChiCC.2017.8028864.
+      //dx.doi.org/10.1016/j.paerosci.2015.11.001, URL https://www.sciencedirect.               [144] B. Li, Q. Hu, Y. Yu, G. Ma, Observer-based fault-tolerant attitude control for
+      com/science/article/pii/S0376042115300221.                                                      rigid spacecraft, IEEE Trans. Aerosp. Electron. Syst. 53 (5) (2017) 2572–2582,
+[122] S.N. Wu, W.Y. Zhou, S.J. Tan, G.Q. Wu, Robust H∞ control for spacecraft                         http://dx.doi.org/10.1109/TAES.2017.2705318.
+      rendezvous with a noncooperative target, Sci. World J. (2013) http://dx.doi.              [145] D. Ran, X. Chen, A. de Ruiter, B. Xiao, Adaptive extended-state observer-
+      org/10.1155/2013/579703.                                                                        based fault tolerant attitude control for spacecraft with reaction wheels, Acta
+[123] D. Xu, B. Jiang, P. Shi, Robust NSV fault-tolerant control system design against                Astronaut. 145 (2018) 501–514, http://dx.doi.org/10.1016/j.actaastro.2018.01.
+      actuator faults and control surface damage under actuator dynamics, IEEE                        021.
+      Trans. Ind. Electron. 62 (9) (2015) 5919–5928, http://dx.doi.org/10.1109/TIE.             [146] X.Y. Zhang, Q. Zong, B.L. Tian, S.K. Shao, W.J. Liu, Finite-time fault estimation
+      2015.2450714.                                                                                   and fault-tolerant control for rigid spacecraft, J. Aerosp. Eng. 31 (6) (2018)
+[124] Z. Li, X. Yang, H. Gao, Autonomous impulsive rendezvous for spacecraft under                    1–10, http://dx.doi.org/10.1061/(ASCE)AS.1943-5525.0000915.
+      orbital uncertainty and thruster faults, J. Franklin Inst. B 350 (9) (2013)               [147] Q. Shen, C. Yue, C.H. Goh, D. Wang, Active fault-tolerant control system design
+      2455–2473, http://dx.doi.org/10.1016/j.jfranklin.2012.07.002.                                   for spacecraft attitude maneuvers with actuator saturation and faults, IEEE
+[125] B. Jiang, Q. Hu, M.I. Friswell, Fixed-time rendezvous control of spacecraft with                Trans. Ind. Electron. 66 (5) (2019) 3763–3772, http://dx.doi.org/10.1109/TIE.
+      a tumbling target under loss of actuator effectiveness, IEEE Trans. Aerosp.                     2018.2854602.
+      Electron. Syst. 52 (4) (2016) 1576–1586, http://dx.doi.org/10.1109/TAES.                  [148] B. Guo, Y. Chen, Adaptive fast sliding mode fault tolerant control integrated
+      2016.140406.                                                                                    with disturbance observer for spacecraft attitude stabilization system, ISA Trans.
+[126] R. Liu, Z. Sun, D. Ye, Adaptive sliding mode control for spacecraft autonomous                  94 (2019) 1–9, http://dx.doi.org/10.1016/j.isatra.2019.04.014.
+      rendezvous with elliptical orbits and thruster faults, IEEE Access 5 (2017)               [149] X. Zhang, Z. Gao, M. Qian, L. Bai, Adaptive fault-tolerant control for rigid
+      24853–24862, http://dx.doi.org/10.1109/ACCESS.2017.2767179.                                     spacecraft attitude system using fractional order sliding mode, in: Proceedings
+[127] H. Dong, Q. Hu, M.I. Friswell, G. Ma, Dual quaternion based fault-tolerant                      of the 31st Chinese Control and Decision Conference, CCDC 2019, IEEE, 2019,
+      control for spacecraft tracking with finite-time convergence, IEEE Trans. Control               pp. 422–427, http://dx.doi.org/10.1109/CCDC.2019.8832787.
+      Syst. Technol. 25 (4) (2017) 1231–1242, http://dx.doi.org/10.1109/TCST.2016.              [150] B. Li, Q. Hu, Y. Yang, Continuous finite-time extended state observer based
+      2603070.                                                                                        fault tolerant control for attitude stabilization, Aerosp. Sci. Technol. 84 (2019)
+[128] Q. Hu, X. Shao, W.H. Chen, Robust fault-tolerant tracking control for spacecraft                204–213, http://dx.doi.org/10.1016/j.ast.2018.10.006.
+      proximity operations using time-varying sliding mode, IEEE Trans. Aerosp.                 [151] X. Huang, G. Duan, Fault-tolerant attitude tracking control of combined
+      Electron. Syst. 54 (1) (2018) 2–17, http://dx.doi.org/10.1109/TAES.2017.                        spacecraft with reaction wheels under prescribed performance, ISA Trans. 98
+      2729978.                                                                                        (March) (2020) 161–172, http://dx.doi.org/10.1016/j.isatra.2019.08.041.
+[129] L. Sun, G. Sun, Robust adaptive saturated fault-tolerant control of autonomous            [152] X.W. Huang, G.R. Duan, Robust control allocation in attitude fault-tolerant
+      rendezvous with mismatched disturbances, Int. J. Control Autom. Syst. 17 (11)                   control for combined spacecraft under measurement uncertainty, IEEE Access
+      (2019) 2703–2713, http://dx.doi.org/10.1007/s12555-018-0636-2.                                  7 (2019) 156191–156206, http://dx.doi.org/10.1109/ACCESS.2019.2949285.
+[130] Q. Li, J. Yuan, C. Sun, Robust fault-tolerant saturated control for spacecraft            [153] B. Xiao, Q. Hu, Y. Zhang, Fault-tolerant attitude control for flexible spacecraft
+      proximity operations with actuator saturation and faults, Adv. Space Res. 63                    without angular velocity magnitude measurement, J. Guid. Control Dyn. 34 (5)
+      (5) (2019) 1541–1553, http://dx.doi.org/10.1016/j.asr.2018.11.004.                              (2011) 1556–1561, http://dx.doi.org/10.2514/1.51148.
+[131] A.H. De Ruiter, Observer-based adaptive spacecraft attitude control with                  [154] B. Xiao, M. Huo, X. Yang, Y. Zhang, Fault-tolerant attitude stabilization
+      guaranteed performance bounds, IEEE Trans. Automat. Control 61 (10) (2016)                      for satellites without rate sensor, IEEE Trans. Ind. Electron. 62 (11) (2015)
+      3146–3151, http://dx.doi.org/10.1109/TAC.2015.2503719.                                          7191–7202, http://dx.doi.org/10.1109/TIE.2015.2432107.
+
+
+                                                                                           14
+M.N. Hasan et al.                                                                                                                          Progress in Aerospace Sciences 130 (2022) 100806
+
+
+[155] Q. Hu, B. Li, D. Wang, E. Kee Poh, Velocity-free fault-tolerant control allocation            [179] C. Zhang, G. Ma, Y. Sun, C. Li, Prescribed performance adaptive attitude
+      for flexible spacecraft with redundant thrusters, Internat. J. Systems Sci. 46 (6)                  tracking control for flexible spacecraft with active vibration suppression, Non-
+      (2015) 976–992, http://dx.doi.org/10.1080/00207721.2013.803634.                                     linear Dynam. 96 (3) (2019) 1909–1926, http://dx.doi.org/10.1007/s11071-
+[156] B. Xiao, S. Yin, Velocity-free fault-tolerant and uncertainty attenuation control                   019-04894-x.
+      for a class of nonlinear systems, IEEE Trans. Ind. Electron. 63 (7) (2016)                    [180] Q. Li, H. Yang, D. Zhao, B. Jiang, Fault-tolerant control and vibration sup-
+      4400–4411, http://dx.doi.org/10.1109/TIE.2016.2532284.                                              pression of flexible spacecraft: An interconnected system approach, Chin. J.
+[157] S. Shao, Q. Zong, B. Tian, F. Wang, Finite-time sliding mode attitude control                       Aeronaut. (March) (2020) http://dx.doi.org/10.1016/j.cja.2020.02.014.
+      for rigid spacecraft without angular velocity measurement, J. Franklin Inst. B                [181] L. Hou, H. Sun, Anti-disturbance attitude control of flexible spacecraft with
+      354 (12) (2017) 4656–4674, http://dx.doi.org/10.1016/j.jfranklin.2017.04.020,                       quantized states, Aerosp. Sci. Technol. 99 (2020) 105760, http://dx.doi.org/10.
+      URL https://www.sciencedirect.com/science/article/pii/S0016003217302090.                            1016/j.ast.2020.105760, URL https://www.sciencedirect.com/science/article/
+[158] X. Zhang, Q. Zong, B. Tian, W. Liu, Continuous robust fault-tolerant control and                    pii/S1270963819329463.
+      vibration suppression for flexible spacecraft without angular velocity, Internat.             [182] Q. Liu, M. Liu, Y. Shi, J. Yu, Event-triggered adaptive attitude control
+      J. Robust Nonlinear Control 29 (12) (2019) 3915–3935, http://dx.doi.org/10.                         for flexible spacecraft with actuator nonlinearity, Aerosp. Sci. Technol. 106
+      1002/rnc.4584.                                                                                      (2020) 106111, http://dx.doi.org/10.1016/j.ast.2020.106111, URL https://
+[159] X. Wang, C.P. Tan, Fault-tolerant spacecraft attitude control under actuator                        www.sciencedirect.com/science/article/pii/S1270963820307938.
+      saturation and without angular velocity, Internat. J. Robust Nonlinear Control                [183] Y. Miao, I. Hwang, M. Liu, F. Wang, Adaptive fast nonsingular terminal
+      29 (18) (2019) 6483–6506, http://dx.doi.org/10.1002/rnc.4732.                                       sliding mode control for attitude tracking of flexible spacecraft with rotating
+[160] B. Huo, Y. Xia, L. Yin, M. Fu, Fuzzy adaptive fault-tolerant output feedback                        appendage, Aerosp. Sci. Technol. 93 (2019) 105312, http://dx.doi.org/10.
+      attitude-tracking control of rigid spacecraft, IEEE Trans. Syst. Man Cybern.: Syst.                 1016/j.ast.2019.105312, URL https://www.sciencedirect.com/science/article/
+      47 (8) (2017) 1898–1908, http://dx.doi.org/10.1109/TSMC.2016.2564918.                               pii/S127096381930567X.
+[161] C. Zhang, J. Wang, D. Zhang, X. Shao, Learning observer based and event-                      [184] C. Zhang, G. Ma, Y. Sun, C. Li, Observer-based prescribed performance attitude
+      triggered control to spacecraft against actuator faults, Aerosp. Sci. Technol.                      control for flexible spacecraft with actuator saturation, ISA Trans. 89 (2019)
+      78 (2018) 522–530, http://dx.doi.org/10.1016/j.ast.2018.05.007, URL https:                          84–95, http://dx.doi.org/10.1016/j.isatra.2018.12.027.
+      //www.sciencedirect.com/science/article/pii/S1270963818302529.                                [185] A. Wu, R. Dong, Y. Zhang, L. He, Adaptive sliding mode control laws for attitude
+[162] X. Wang, C.P. Tan, F. Wu, J. Wang, Fault-tolerant attitude control for rigid                        stabilization of flexible spacecraft with inertia uncertainty, IEEE Access 7 (2019)
+      spacecraft without angular velocity measurements, IEEE Trans. Cybern. (2019)                        7159–7175, http://dx.doi.org/10.1109/ACCESS.2018.2889492.
+      1–14, http://dx.doi.org/10.1109/TCYB.2019.2905427.                                            [186] C. Zhong, Z. Chen, Y. Guo, Attitude control for flexible spacecraft with dis-
+[163] B. Li, K. Qin, B. Xiao, Y. Yang, Finite-time extended state observer based fault                    turbance rejection, IEEE Trans. Aerosp. Electron. Syst. 53 (1) (2017) 101–110,
+      tolerant output feedback control for attitude stabilization, ISA Trans. 91 (2019)                   http://dx.doi.org/10.1109/TAES.2017.2649259.
+      11–20, http://dx.doi.org/10.1016/j.isatra.2019.01.039.
+                                                                                                    [187] Q. Shen, C. Yue, C.H. Goh, Velocity-free attitude reorientation of a flexible
+[164] Z. Gao, B. Han, G. Jiang, J. Lin, D. Xu, Active fault tolerant control design
+                                                                                                          spacecraft with attitude constraints, J. Guid. Control Dyn. 40 (5) (2017)
+      approach for the flexible spacecraft with sensor faults, J. Franklin Inst. B 354
+                                                                                                          1293–1299, http://dx.doi.org/10.2514/1.G002129.
+      (18) (2017) 8038–8056, http://dx.doi.org/10.1016/j.jfranklin.2017.09.023.
+                                                                                                    [188] J. Tao, T. Zhang, Q. Liu, Novel finite-time adaptive neural control of flexible
+[165] J. Zhang, A.K. Swain, S.K. Nguang, Robust sensor fault estimation scheme for
+                                                                                                          spacecraft with actuator constraints and prescribed attitude tracking per-
+      satellite attitude control systems, J. Franklin Inst. B 350 (9) (2013) 2581–2604,
+                                                                                                          formance, Acta Astronaut. 179 (2021) 646–658, http://dx.doi.org/10.1016/j.
+      http://dx.doi.org/10.1016/j.jfranklin.2013.06.010.
+                                                                                                          actaastro.2020.10.010.
+[166] S.S. Nasrolahi, F. Abdollahi, Sensor fault detection and recovery in satellite
+                                                                                                    [189] Q. Hu, B. Xiao, M.I. Friswell, Fault tolerant control with H∞ performance for
+      attitude control, Acta Astronaut. 145 (2018) 275–283, http://dx.doi.org/10.
+                                                                                                          attitude tracking of flexible spacecraft, IET Control Theory Appl. 6 (10) (2012)
+      1016/j.actaastro.2018.01.002.
+                                                                                                          1388–1399, http://dx.doi.org/10.1049/iet-cta.2011.0496.
+[167] Y. Cheng, B. Jiang, Y. Fu, Z. Gao, Robust observer based reliable control for
+                                                                                                    [190] M.N. Hasan, M. Haris, S. Qin, Vibration suppression and fault-tolerant attitude
+      satellite attitude control systems with sensor faults, Int. J. Innovative Comput.
+                                                                                                          control for flexible spacecraft with actuator faults and malalignments, Aerosp.
+      Inf. Control 7 (7 B) (2011) 4149–4160.
+                                                                                                          Sci. Technol. 120 (2022) 107290, http://dx.doi.org/10.1016/j.ast.2021.107290,
+[168] B. Han, Z. Gao, Y. Xu, J. Zhao, T. Cao, Fault tolerant control design for the
+                                                                                                          URL https://www.sciencedirect.com/science/article/pii/S1270963821008002.
+      attitude control systems of flexible spacecraft with sensor faults, in: Proceedings
+                                                                                                    [191] Q. Hu, L. Li, M.I. Friswell, Spacecraft anti-unwinding attitude control with
+      of the 28th Chinese Control and Decision Conference, CCDC 2016, IEEE, 2016,
+                                                                                                          actuator nonlinearities and velocity limit, J. Guid. Control Dyn. 38 (10) (2015)
+      pp. 5939–5944, http://dx.doi.org/10.1109/CCDC.2016.7532060.
+                                                                                                          2042–2050, http://dx.doi.org/10.2514/1.G000980.
+[169] L. Bai, Z. Gao, Integrated fault-tolerant stabilization control for satellite attitude
+                                                                                                    [192] N.A. Chaturvedi, A.K. Sanyal, N.H. McClamroch, Rigid-body attitude control,
+      systems with actuator and sensor faults, J. Control Autom. Electr. Syst. 30 (6)
+                                                                                                          IEEE Control Syst. Mag. 31 (3) (2011) 30–51, http://dx.doi.org/10.1109/MCS.
+      (2019) 864–878, http://dx.doi.org/10.1007/s40313-019-00498-3.
+                                                                                                          2011.940459.
+[170] M. Qian, H. Yi, Z. Zheng, Integrated fault tolerant attitude control approach
+      for satellite attitude system with sensor faults, Optim. Control Appl. Methods                [193] R. Dong, A.G. Wu, Y. Zhang, Anti-unwinding sliding mode attitude maneuver
+      41 (2) (2020) 555–570, http://dx.doi.org/10.1002/oca.2557.                                          control for rigid spacecraft, IEEE Trans. Automat. Control (2021) 1, http:
+[171] X. Liang, Q. Wang, C. Hu, C. Dong, Observer-based H∞ fault-tolerant attitude                        //dx.doi.org/10.1109/TAC.2021.3079220.
+      control for satellite with actuator and sensor faults, Aerosp. Sci. Technol.                  [194] R. Dong, A.G. Wu, Y. Zhang, G.R. Duan, Anti-unwinding sliding mode attitude
+      95 (2019) 105424, http://dx.doi.org/10.1016/j.ast.2019.105424, URL https:                           control via two modified Rodrigues parameter sets for spacecraft, Automatica
+      //www.sciencedirect.com/science/article/pii/S1270963819300021.                                      129 (2021) 109642, http://dx.doi.org/10.1016/j.automatica.2021.109642, URL
+[172] C. Yue, F. Wang, X. Cao, Q. Shen, X. Chen, Robust fault-tolerant attitude                           https://www.sciencedirect.com/science/article/pii/S000510982100162X.
+      tracking with guaranteed prescribed performance, J. Franklin Inst. B 357 (1)                  [195] S.M. Amrr, M. Nabi, Finite-time fault tolerant attitude tracking control of
+      (2020) 229–253, http://dx.doi.org/10.1016/j.jfranklin.2019.10.003.                                  spacecraft using robust nonlinear disturbance observer with anti-unwinding
+[173] L. Bai, Z. Gao, M. Qian, X. Zhang, Sliding mode observer-based FTC strategy                         approach, Adv. Space Res. 66 (7) (2020) 1659–1671, http://dx.doi.org/10.
+      design for satellite attitude systems with sensor fault, in: Proceedings of the                     1016/j.asr.2020.06.019, URL https://www.sciencedirect.com/science/article/
+      31st Chinese Control and Decision Conference, CCDC 2019, IEEE, 2019, pp.                            pii/S0273117720304397.
+      428–433, http://dx.doi.org/10.1109/CCDC.2019.8832950.                                         [196] S.M. Amrr, A. Banerjee, M. Nabi, Fault-tolerant attitude control of small
+[174] Y. Miao, F. Wang, M. Liu, Anti-disturbance backstepping attitude control for                        spacecraft using robust artificial time-delay approach, IEEE J. Miniat. Air Space
+      rigid-flexible coupling spacecraft, IEEE Access 6 (2018) 50729–50736, http:                         Syst. 1 (3) (2020) 179–187, http://dx.doi.org/10.1109/JMASS.2020.3022685.
+      //dx.doi.org/10.1109/ACCESS.2018.2868074.                                                     [197] L. Fan, H. Huang, K. Zhou, Robust fault-tolerant attitude control for satellite
+[175] K. Lu, T. Li, L. Zhang, Active attitude fault-tolerant tracking control of flexible                 with multiple uncertainties and actuator faults, Chin. J. Aeronaut. (2020)
+      spacecraft via the Chebyshev neural network, Trans. Inst. Meas. Control 41 (4)                      http://dx.doi.org/10.1016/j.cja.2020.06.026.
+      (2019) 925–933, http://dx.doi.org/10.1177/0142331218803410.                                   [198] M.R. Abedini, M. Abedi, Design of a robust fault-tolerant control algorithm
+[176] X. Zhu, J. Chen, Z.H. Zhu, Adaptive learning observer for spacecraft attitude                       based on failure mode effects criticality analysis for a three-axis satellite,
+      control with actuator fault, Aerosp. Sci. Technol. 108 (2021) 106389, http:                         Proc. Inst. Mech. Eng. G 233 (1) (2019) 91–110, http://dx.doi.org/10.1177/
+      //dx.doi.org/10.1016/j.ast.2020.106389, URL https://www.sciencedirect.com/                          0954410017727300.
+      science/article/pii/S1270963820310713.                                                        [199] M. Zhuang, L. Tan, S. Song, Fixed-time attitude coordination control for
+[177] S.D. Gennaro, Output stabilization of flexible spacecraft with active vibration                     spacecraft with external disturbance, ISA Trans. 114 (2021) 150–170, http://
+      suppression, IEEE Trans. Aerosp. Electron. Syst. 39 (3) (2003) 747–759, http:                       dx.doi.org/10.1016/j.isatra.2020.12.048, URL https://www.sciencedirect.com/
+      //dx.doi.org/10.1109/TAES.2003.1238733.                                                             science/article/pii/S001905782030567X.
+[178] J. Guo, Y. Geng, B. Wu, X. Kong, Vibration suppression of flexible space-                     [200] S. Li, Y. She, Recent advances in contact dynamics and post-capture control for
+      craft during attitude maneuver using CMGs, Aerosp. Sci. Technol. 72                                 combined spacecraft, Prog. Aerosp. Sci. 120 (2021) 100678, http://dx.doi.org/
+      (2018) 183–192, http://dx.doi.org/10.1016/j.ast.2017.11.005, URL https://                           10.1016/j.paerosci.2020.100678, URL https://www.sciencedirect.com/science/
+      www.sciencedirect.com/science/article/pii/S1270963817311781.                                        article/pii/S0376042120300907.
+
+
+                                                                                               15
+M.N. Hasan et al.                                                                                                                     Progress in Aerospace Sciences 130 (2022) 100806
+
+
+[201] Y. Hu, Y. Geng, B. Wu, D. Wang, Model-free prescribed performance control for             [210] M. Shirobokov, S. Trofimov, M. Ovchinnikov, Survey of machine learning
+      spacecraft attitude tracking, IEEE Trans. Control Syst. Technol. 29 (1) (2021)                  techniques in spacecraft control design, Acta Astronaut. 186 (2021) 87–97, http:
+      165–179.                                                                                        //dx.doi.org/10.1016/j.actaastro.2021.05.018, URL https://www.sciencedirect.
+[202] D. Cai, H. Zou, J. Wang, Y. Huang, D. Shi, Event-triggered attitude tracking for                com/science/article/pii/S0094576521002514.
+      rigid spacecraft, Sci. China Inf. Sci. 62 (12) (2019) 1–16, http://dx.doi.org/10.         [211] D. Wang, F. Fu, W. Li, Y. Tu, C. Liu, W. Liu, A review of the diagnosability of
+      1007/s11432-018-9844-3.                                                                         control systems with applications to spacecraft, Annu. Rev. Control 49 (2020)
+[203] Y. Liu, B. Jiang, J. Lu, J. Cao, G. Lu, Event-triggered sliding mode control for                212–229, http://dx.doi.org/10.1016/j.arcontrol.2020.03.004.
+      attitude stabilization of a rigid spacecraft, IEEE Trans. Syst. Man Cybern.: Syst.        [212] A.A. Zhdanov, L.V. Zemskikh, B.B. Belyaev, A system of stabilizing the angular
+      50 (9) (2020) 3290–3299, http://dx.doi.org/10.1109/TSMC.2018.2867061.                           motion of a spacecraft based on a neuron-like system of autonomous adaptive
+[204] C. Zhang, M.Z. Dai, P. Dong, H. Leung, J. Wang, Fault-tolerant attitude                         control, Cosmic Res. 42 (3) (2004) 269–282, http://dx.doi.org/10.1023/B:
+      stabilization for spacecraft with low-frequency actuator updates: An integral-                  COSM.0000033301.16194.fc.
+      type event-triggered approach, IEEE Trans. Aerosp. Electron. Syst. 57 (1) (2021)          [213] J. Yao, Q. Hu, J. Zheng, Nonlinear optimal attitude control of spacecraft
+      729–737, http://dx.doi.org/10.1109/TAES.2020.3009542.                                           using novel state-dependent coefficient parameterizations, Aerosp. Sci. Technol.
+[205] C. Zhang, M.Z. Dai, J. Wu, B. Xiao, B. Li, M. Wang, Neural-networks and                         112 (2021) 106586, http://dx.doi.org/10.1016/j.ast.2021.106586, URL https:
+      event-based fault-tolerant control for spacecraft attitude stabilization, Aerosp.               //www.sciencedirect.com/science/article/pii/S1270963821000973.
+      Sci. Technol. 114 (2021) 106746, http://dx.doi.org/10.1016/j.ast.2021.106746,             [214] P. Wang, X. Zhang, Optimized Bézier-curve-based command generation and
+      URL https://www.sciencedirect.com/science/article/pii/S127096382100256X.                        robust inverse optimal control for attitude tracking of spacecraft, Aerosp. Sci.
+[206] M.E. Paté-Cornell, R.L. Dillon, S.D. Guikema, On the limitations of redundancies                Technol. (2021) 107183, http://dx.doi.org/10.1016/j.ast.2021.107183, URL
+      in the improvement of system reliability, Risk Anal. 24 (6) (2004) 1423–1436,                   https://www.sciencedirect.com/science/article/pii/S1270963821006933.
+      http://dx.doi.org/10.1111/j.0272-4332.2004.00539.x.                                       [215] B.A. Kristiansen, J.T. Gravdahl, T.A. Johansen, Energy optimal attitude control
+[207] P.O. Robert, Limitations of spacecraft redundancy: A case study analysis, in:                   for a solar-powered spacecraft, Eur. J. Control 62 (2021) 192–197, http://
+      44th International Conference on Environmental Systems, 2014, pp. 248–253.                      dx.doi.org/10.1016/j.ejcon.2021.06.021, URL https://www.sciencedirect.com/
+[208] D.Y. Lee, H. Park, M. Romano, J. Cutler, Development and experimental                           science/article/pii/S0947358021000819.
+      validation of a multi-algorithmic hybrid attitude determination and control               [216] M.N. Hasan, M. Haris, S. Qin, Flexible spacecraft’s active fault-tolerant and
+      system for a small satellite, Aerosp. Sci. Technol. 78 (2018) 494–509, http:                    anti-unwinding attitude control with vibration suppression, Aerosp. Sci. Tech-
+      //dx.doi.org/10.1016/j.ast.2018.04.040, URL https://www.sciencedirect.com/                      nol. (2022) 107397, http://dx.doi.org/10.1016/j.ast.2022.107397, URL https:
+      science/article/pii/S1270963817322940.                                                          //www.sciencedirect.com/science/article/pii/S1270963822000712.
+[209] J. Song, D. Rondao, N. Aouf, Deep learning-based spacecraft relative navigation           [217] X. Yu, Y. Zhang, Z. Liu, Fault-tolerant flight control design with explicit
+      methods: A survey, Acta Astronaut. 191 (2022) 22–40, http://dx.doi.org/                         consideration of reconfiguration transients, J. Guid. Control Dyn. 39 (3) (2016)
+      10.1016/j.actaastro.2021.10.025, URL https://www.sciencedirect.com/science/                     556–563, http://dx.doi.org/10.2514/1.G001414.
+      article/pii/S0094576521005671.
+
+
+
+
+                                                                                           16
+

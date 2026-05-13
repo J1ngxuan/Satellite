@@ -171,9 +171,9 @@ end
 
 % -------------------------------------------------------------------------
 function export_reaction_wheel_figure(res_w0, res_w1, res_w2, outfile)
-fig = figure('Color', 'w', 'Visible', 'off', 'Position', [100 100 900 900]);
+fig = figure('Color', 'w', 'Visible', 'off', 'Position', [100 100 900 1050]);
 
-subplot(3, 1, 1);
+subplot(4, 1, 1);
 plot(res_w0.t, res_w0.err_deg, res_w1.t, res_w1.err_deg, ...
      res_w2.t, res_w2.err_deg, 'LineWidth', 1.2);
 grid on;
@@ -181,14 +181,14 @@ ylabel('Pointing err [deg]');
 legend('no fail', '1 wheel fail', '2 wheels fail', 'Location', 'best');
 title('Attitude pointing error under reaction-wheel faults');
 
-subplot(3, 1, 2);
+subplot(4, 1, 2);
 plot(res_w2.t, res_w2.w' * 180 / pi, 'LineWidth', 1.2);
 grid on;
 ylabel('\omega [deg/s]');
 legend('\omega_x', '\omega_y', '\omega_z', 'Location', 'best');
 title('Body rates in the 2-wheel-failure case');
 
-subplot(3, 1, 3);
+subplot(4, 1, 3);
 plot(res_w0.t, res_w0.mode, res_w1.t, res_w1.mode, ...
      res_w2.t, res_w2.mode, 'LineWidth', 1.4);
 ylim([0.5 2.5]);
@@ -199,6 +199,20 @@ ylabel('Active actuators');
 xlabel('Time [s]');
 legend('no fail', '1 wheel', '2 wheels', 'Location', 'east');
 title('Automatic co-control activation after rank loss');
+
+subplot(4, 1, 4);
+plot(res_w2.t, res_w2.gamma_hat(1:4, :)', 'LineWidth', 1.2);
+hold on;
+yline(0.5, 'k--', 'health threshold');
+if any(res_w2.fault_alarm)
+    xline(res_w2.detect_time, 'r--', 'alarm');
+end
+grid on;
+ylim([-0.05 1.15]);
+ylabel('\gamma wheel');
+xlabel('Time [s]');
+legend('W1', 'W2', 'W3', 'W4', 'Location', 'best');
+title('Online wheel health estimates');
 
 exportgraphics(fig, outfile, 'Resolution', 300);
 close(fig);
@@ -243,9 +257,9 @@ end
 
 % -------------------------------------------------------------------------
 function export_thruster_fault_figure(res_nom, res_deg, res_fail, fail_list, outfile)
-fig = figure('Color', 'w', 'Visible', 'off', 'Position', [100 100 900 900]);
+fig = figure('Color', 'w', 'Visible', 'off', 'Position', [100 100 900 1050]);
 
-subplot(3, 1, 1);
+subplot(4, 1, 1);
 hold on;
 plot(res_nom.t, vecnorm(res_nom.dv_achieved), 'LineWidth', 1.3, 'DisplayName', 'nominal');
 plot(res_deg.t, vecnorm(res_deg.dv_achieved), 'LineWidth', 1.3, 'DisplayName', 'degrade');
@@ -256,19 +270,51 @@ ylabel('|dV| [m/s]');
 legend('Location', 'southeast');
 title('Achieved delta-v versus time');
 
-subplot(3, 1, 2);
+subplot(4, 1, 2);
 plot(res_deg.t, res_deg.err_deg, res_fail.t, res_fail.err_deg, 'LineWidth', 1.2);
 grid on;
 ylabel('Att err [deg]');
 legend('degrade', 'failure', 'Location', 'best');
 title('Attitude error during the burn');
 
-subplot(3, 1, 3);
+subplot(4, 1, 3);
 plot(res_fail.t, res_fail.F_hist', 'LineWidth', 1.0);
 grid on;
 ylabel('Thrust per nozzle [N]');
 xlabel('Time [s]');
 title(sprintf('Nozzle thrust commands in the failure case (dead = %s)', mat2str(fail_list)));
+
+subplot(4, 1, 4);
+hold on;
+num_wheel = size(res_deg.Tw_hist, 1);
+deg_list = res_deg.fault_list(res_deg.fault_list <= size(res_deg.F_hist, 1));
+fail_list = fail_list(fail_list <= size(res_fail.F_hist, 1));
+legend_entries = {};
+if ~isempty(deg_list)
+    plot(res_deg.t, res_deg.gamma_hat(num_wheel + deg_list, :)', 'LineWidth', 1.2);
+    legend_entries = [legend_entries, arrayfun(@(i) sprintf('degrade T%d', i), ...
+        deg_list, 'UniformOutput', false)];
+end
+if ~isempty(fail_list)
+    plot(res_fail.t, res_fail.gamma_hat(num_wheel + fail_list, :)', '--', 'LineWidth', 1.2);
+    legend_entries = [legend_entries, arrayfun(@(i) sprintf('failed T%d', i), ...
+        fail_list, 'UniformOutput', false)];
+end
+yline(0.1, 'k--', 'usable threshold');
+if any(res_deg.fault_alarm)
+    xline(res_deg.detect_time, 'Color', [0.85 0.1 0.1], 'LineStyle', ':');
+end
+if any(res_fail.fault_alarm)
+    xline(res_fail.detect_time, 'Color', [0.85 0.1 0.1], 'LineStyle', '--');
+end
+grid on;
+ylim([-0.05 1.15]);
+ylabel('\gamma thr');
+xlabel('Time [s]');
+if ~isempty(legend_entries)
+    legend(legend_entries, 'Location', 'best');
+end
+title('Online thruster effectiveness estimates');
 
 exportgraphics(fig, outfile, 'Resolution', 300);
 close(fig);

@@ -1,0 +1,848 @@
+                                                                               NOMENCLATURE
+
+                                                                               Acronyms
+Optimization of Spacecraft                                                     CoM     Center of mass.
+                                                                               DX      Diagnosis.
+Thrusters Configuration Under                                                  ESA     European Space Agency.
+                                                                               FDI     Fault detection andisolation.
+Fault Diagnosability and                                                       FTC     Fault tolerant control.
+                                                                               GNC     Guidance navigation control.
+Recoverability Constraints                                                     HCW     Hill Clohessy Wiltshire.
+                                                                               MIB     Minimum impulse bit.
+                                                                               LEO     Low Earth orbit.
+                                                                               LVLH Local vertical local horizontal.
+                                                                               LTI     Linear time invariant.
+MARTIN FAURÉ                                                                   NAV     Navigation.
+DAVID HENRY                                                                    STR     Star TRacker.
+JÉRÔME CIESLAK                                                                 IMU     Inertial measurment unit.
+University of Bordeaux, Bordeaux INP, CNRS, Talence, France                    LIDAR Light detection and ranging.
+PIERRE LACHEVRE
+Airbus Defence and Space SAS, Toulouse, France
+FINN ANKERSEN                                                                  I. INTRODUCTION
+ESA/ESTEC, Noordwijk, The Netherlands                                              Current practices in space industries result in a large
+                                                                               number of iterations to ensure that the thruster architecture
+                                                                               (proposed by GNC engineers) can be accommodated con-
+                                                                               sidering plume impingement, contamination of equipment
+    This article investigates the problem of optimal placement (position
+and orientation) of spacecraft thrusters, under fault diagnosability           (cameras, STR, and payload), thruster performance (MIB
+and fault recoverability constraints. Avionics equipment contamina-            effects, actuation period, and type of modulation), layout
+tion and plume impingement are also considered. The goal is to find            including piping and others, and spacecraft-dependent and
+the configuration with the least number of thrusters required for              thruster technology aspects (throughput constraints, num-
+a given spacecraft architecture, so that equipping the control unit            ber of allowed firings).
+with a model-based fault DX and fault-tolerant control solution, able
+to accommodate any single thruster’s fault can be guaranteed. This                 Recent developments typically consider the thruster
+includes total loss of controllability of the faulty thruster. The proposed    placement problem, to be coupled with “intelligent GNC
+solution is a model-based solution in the sense that it is based on the        functions,” in the sense equipped with algorithms that can
+spacecraft attitude and translational dynamics. With the help of the           detect, isolate, and accommodate faults at the software level;
+zonotope concept and its so-called H-representation, it is shown that          see [1], [2], [3], [4], and [5] for interesting communications
+this problem can be formulated as a nonlinear constrained optimiza-
+tion problem, which can be solved efficiently using hybrid optimization        from space agencies and industries. Such algorithms are
+techniques. The proposed solution is assessed on a generic spacecraft          termed active FTC algorithms (algorithms in charge of
+architecture that performs a proximity maneuver.                               accommodating the faults) and are characterized by the
+                                                                               presence of FDI algorithms (algorithms in charge of detect-
+Manuscript received 16 March 2022; revised 31 January 2023; accepted 1
+                                                                               ing and isolating the faults) that “pilot” the FTC unit; see [6],
+March 2023. Date of publication 14 March 2023; date of current version         [7], [8], [9], [10], and [11] for good technical books on
+11 October 2023.                                                               existing model-based FDI and FTC approaches. For space-
+DOI. No. 10.1109/TAES.2023.3256976
+                                                                               craft controlled by thrusters uniquely, the existence of such
+                                                                               solutions depends on the thruster configuration. The authors
+Refereeing of this contribution was handled by M. W. Mueller.                  in [12], [13], and [14] investigated this problem in a general
+This work was supported by Airbus Defence and Space, Toulouse, France          framework, through the concepts of fault diagnosability and
+and Institut National Polytechnique, Bordeaux, France under Grant ADS          fault recoverability.
+AG-TMCSF-1000099605-2019 and Grant AST CT_2018-604.                                Fault diagnosability can be defined intuitively as the
+Authors’ addresses: Martin Fauré, David Henry, and Jérôme Cieslak are          ability for a system and its monitoring capacities to exhibit
+with IMS Laboratory, University of Bordeaux, Bordeaux INP, CNRS                different symptoms for each fault situation. There exist the
+(UMR 5218), 33405, Talence cedex, France, E-mail: (martin.faure@               following two distinct and parallel research communities
+ims-bordeaux.fr; david.henry@ims-bordeaux.fr; jerome.cieslak@ims-
+bordeaux.fr); Pierre Lachevre is with Airbus Defence and Space SAS,
+                                                                               that develop general theories on that topic: 1) the FDI
+31402 Toulouse Cedex 4, France, E-mail: (pierre.lachevre@airbus.com);          community whose foundations are based on engineering
+Finn Ankersen is with ESA/ESTEC, Keplerlaan 1, 2201 AZ Noordwijk,              disciplines such as control theory and statistical decision-
+The Netherlands, E-mail: (finn.ankersen@ieee.org). (Corresponding au-          making (see for instance [6], [9], and [15]); and 2) the DX
+thor: David Henry.)                                                            community whose foundations are derived from the fields
+                                                                               of computer science and artificial intelligence (see [13] and
+0018-9251 © 2023 IEEE                                                          [14] for good surveys).
+
+IEEE TRANSACTIONS ON AEROSPACE AND ELECTRONIC SYSTEMS VOL. 59, NO. 5 OCTOBER 2023                                                                    5275
+
+Authorized licensed use limited to: Harbin Institute of Technology. Downloaded on January 26,2026 at 11:42:59 UTC from IEEE Xplore. Restrictions apply.
+    In the FDI research community, fault diagnosability is                    the problem of seeking if the thruster configuration induces
+addressed as the existence of a mutually exclusive fault                      collinear 3-D propulsion torques. In [42], thruster fault
+incidence matrix (also called fault signature matrix or fault                 diagnosability is formulated as an image matrix problem
+signature table), i.e., the fault incidence matrix does not have              of the adequate faulty models. In [43] and [44], it is proved
+two equal columns. It is worth noting that no real theories                   that only four thrusters are necessary to control the position
+for proper construction of such a fault incidence matrix have                 and attitude of spacecraft, and six thrusters and three valves
+been developed in this community. Fault diagnosability is                     in the event of one thruster failure. Gimbal thrusters are
+often verified a posteriori, i.e., when the FDI algorithm                     investigated in [45]. The solution reported in [46] looks
+has been designed and when it is observed that the fault                      for all thruster locations/directions that maximize control-
+incidence matrix satisfies the mutual exclusivity property.                   lability of the spacecraft in fault-free situations. Then, it is
+We can however note the work reported in [16], [17], and                      shown that some of these configurations are fault-tolerant.
+[18] propose some solutions. A contrario, proper definitions                  Finally, the work reported in [47] proposed formulating
+and theories have been proposed in the DX community, and                      the fault-recoverability property for control surface faults
+a recognized classification now exists. This classification is                of atmospheric reentry vehicles, as an α-Mach map that
+made by system type as follows:                                               corresponds to the flight envelope regions where the vehicle
+                                                                              cannot be rotationally balanced.
+    1) discrete event systems whose foundations come from
+                                                                                   The contribution of this article is the development of
+       the (finite) automata and Petri nets theories [19],
+                                                                              a formal approach, whose objective is to determine the
+       [20], [21], [22];
+                                                                              optimum thruster architecture (i.e., location and orienta-
+    2) continuous systems based upon the fault signature
+                                                                              tion), so that the fault diagnosability and recoverability
+       table and the so-called analytical redundancy rela-
+                                                                              properties are satisfied, with the underlying objective to
+       tions [12], [23], [24], [25];
+                                                                              find the minimum number of thrusters required for a given
+    3) hybrid systems whose foundations come from hybrid
+                                                                              mission, and obviously, preserving avionics equipment and
+       automata theory [26], [27];
+                                                                              plume impingement contamination. By guaranteeing such
+    4) heterogeneous systems whose concepts are derived
+                                                                              properties, the existence of a model-based FDI and FTC
+       from the distributed systems [28], [29].
+                                                                              solution is guaranteed.
+    Fault recoverability is probably less studied than fault                       The originality of the proposed solution is the prob-
+diagnosability. Fault recoverability intuitively enforces that                lem formulation and its resolution. Based on the zonotope
+the remaining systems and subsystems are sufficient to                        paradigm, it is shown how the fault-recoverability property
+accommodate fault effects and preserve control objectives,                    admits a geometric formulation. It is demonstrated how
+whenever a fault occurs. However, it is worth noting that                     the so-called H-representation of zonotopes, allows this
+no well-admitted definition currently exists. The work pre-                   geometric formulation as a nonlinear optimization problem.
+sented in [30] is probably the precursor work about fault                     It is then shown that guaranteeing fault diagnosability re-
+recoverability. The authors also propose a criterion to reflect               sults in further constraining the decision variables, leading
+the process capability to allow restoration of performance                    to the problem formulation to be a nonlinear constrained
+in the presence of faults. In [31], a fault recoverability                    optimization problem, which is then solved using hybrid
+measure is proposed as the ratio between the controllability                  optimization techniques. The solution is an optimal thruster
+Gramian norm of the fault-free system and the faulty one.                     configuration, with the minimal number of thrusters. The
+Following the same idea, the authors in [32] presented                        application support is a proximity maneuver between two
+a procedure to compute a recoverability measure in real-                      spacecraft.
+time. This measure is also derived from the controllability                        Note that the problem of actuator placement is also
+Gramian, computed online using input/output data. Empiri-                     studied in others fields. For instance, in [48] and [49],
+cal Gramians are used for nonlinear systems in [33]. In [34],                 the problem is considered with cost functions relying on
+control reconfigurability is managed as the extension of                      observability and controllability Gramians. In [50], the
+the Gramian-based analogous counter, previously proposed                      optimization goal is to maximize the bandwidth of the
+in [35]. Lie algebra (Lie derivative and Lie brackets) are                    closed loop system by moving the transmission zeros of the
+used in [36] to measure the fault-recoverability property.                    system on the left-half plane. Actuator fault recoverability
+An extension is proposed in [37] for the case of switched                     for a hexacopter is achieved in [51] by slightly tilting the
+systems. Finally, one must cite the developments based on                     rotors by a constant angle. However, it should be noted
+the structural graph theories [38], [39]. In this approach, the               that these techniques do not take diagnosability or complex
+fault-recoverability problem is formulated as the controlla-                  geometrical constraints into account.
+bility and observability problem, of the faulty system.                            The rest of this article is organized as follows. Section II
+    A third research community that manages studies on                        gives necessary backgrounds about the application support.
+fault diagnosability and recoverability, is the aerospace                     Section III states the solution we propose to solve the prob-
+research community. However, it is worth noting that ex-                      lem of thruster optimal placement. The results are discussed
+isting papers do not propose general theories as opposed to                   in Section IV. Finally, Section V concludes this article.
+those mentioned previously. For instance, the diagnosability                       NOTATIONS R is the set of real numbers. Rn is an
+property of thruster faults is formulated in [40] and [41] as                 n-dimensional real space and Rn×m is the set of real n × m
+
+5276                             IEEE TRANSACTIONS ON AEROSPACE AND ELECTRONIC SYSTEMS VOL. 59, NO. 5 OCTOBER 2023
+
+  Authorized licensed use limited to: Harbin Institute of Technology. Downloaded on January 26,2026 at 11:42:59 UTC from IEEE Xplore. Restrictions apply.
+                                                                                                  Fig. 2. GNC-avionics architecture.
+          Fig. 1. Reference scenario in the target body frame.
+
+
+matrices. Vectors and matrices are indicated in bold, e.g., v
+and M. In and 1n denote, respectively, the identity matrix and
+the vector of ones, of dimension n. On×m is the null matrix
+of dimension n × m. v T /M T is used for a vector/matrix
+transpose. v 1 × v 2 denotes the cross product between the
+vectors v 1 and v 2 , and ||v || denotes the Euclidean norm of
+v . For a scalar a, |a| is the absolute value of a. Polytopes and
+zonotopes are extensively used in this article. A zonotope
+is a polytope that admits a symmetry versus its center. It is
+defined as the image of a unit hypercube [−1, +1] p ⊂ Rn by
+an affine function f : R p → Rn . The zonotope Z{v , M} =
+{v + Mξ : ξ ∈ [−1, +1] p } ⊂ Rn (or simply Z) is defined
+by the following two parameters: 1) its center v ∈ Rn ; 2)                        Fig. 3. Original configuration of the thrusters (arrow = opposite
+its generator matrix M ∈ Rn×p . Indeed, Z{v , M} is nothing                              directions) and avionics contamination constraints.
+else than the (linear) image of the hypercube [−1, +1] p by
+the function fv,M : ξ → v + Mξ . The representation based
+on the intersection of half-spaces of a polytope P / zonotope
+Z (the so-called H-representation) is denoted by (H, w) and                        The avionics architecture that is considered to ensure
+is defined as P/Z = {x : Hx ≤ w} with H ∈ Rm×n , where                         these maneuvers, is illustrated in Fig. 2. The relative NAV
+n is the dimension and m, the number of half-spaces defining                   sensor is assumed to be a LIDAR which allows full relative
+the polytope/zonotope.                                                         pose estimation. The GNC sensors are assumed to be IMUs,
+                                                                               STRs, and GPS. In terms of actuators, it is assumed that the
+II. PROBLEM STATEMENT                                                          chaser is equipped by eight groups of three thrusters of 30 N,
+A. Reference Scenario                                                          with the location and the orientation as illustrated in Fig. 3.
+                                                                               The thrusters are numbered as illustrated in Fig. 3.
+    Let us consider a spacecraft as an uncooperative and
+                                                                                   With such a thruster configuration, previous studies
+spinning target to be captured. Its orbit is assumed to be a
+                                                                               demonstrated that an FTC solution can be efficiently de-
+Keplerian circular LEO. We assume that another spacecraft
+                                                                               veloped at, either the thruster management level [41] us-
+(called the chaser) has performed a rendezvous and synchro-
+                                                                               ing an online constrained control allocation (CA) algo-
+nization maneuver, such that the relative distance between
+                                                                               rithm, or at the control level using either the fault hiding
+the two spacecraft is initially [0, 0, 20] m, in the target
+                                                                               paradigm [52], or sliding-mode control techniques [53].
+frame. The relative attitude between the two spacecraft is
+                                                                               This clearly demonstrates that the fault recoverability prop-
+[180, 45, 180]◦ . The initial position and attitude are reported
+                                                                               erty is fulfilled with this thruster configuration. Unfortu-
+in Fig. 1, referred as the point P0 . The scenario we consider
+                                                                               nately, and as it is demonstrated in [41], this is not the case
+consists of the final phase of a capture maneuver of the target
+                                                                               for the fault-diagnosability property.
+along its z-axis. For that purpose, the chaser performs the
+                                                                                   The goal of this article is to address this problem. We
+following maneuvers (see Fig. 1 for an illustration).
+                                                                               are also interested in finding another thruster configuration
+    1) Displacement along the x and z-axis from P0 to P1 .                     so that fault-diagnosability is ensured, while maintaining
+       Coordinates of P1 are [−3.8, 0, 4.5]m (target frame).                   fault recoverability and mission objectives. Furthermore, a
+    2) During the overall displacement P0 → P1 , the rela-                     minimum number of thrusters is sought.
+       tive attitude is maintained to [180, 45, 180]◦ , when-                      Note that the proposed solution is generic and thought
+       ever the target is spinning. So, the spacecraft have a                  valid for any kind of space mission. The reference scenario
+       synchronous attitude motion as illustrated in Fig. 1.                   is used in the following, to illustrate the proposed theory.
+
+FAURÉ ET AL.: OPTIMIZATION OF SPACECRAFT THRUSTERS CONFIGURATION                                                                                     5277
+
+Authorized licensed use limited to: Harbin Institute of Technology. Downloaded on January 26,2026 at 11:42:59 UTC from IEEE Xplore. Restrictions apply.
+                               TABLE I                                        MIB effects on the thrusts. The interested reader can refer
+          List of Uncertainties: Inspired From the E.Deorbit                  to [58] for more details on modeling the thrusters.
+                             Mission [41]
+                                                                                  The following assumption is made:
+                                                                              ASSUMPTION 1 The thrusters are the only source of external
+                                                                              forces and moments.
+                                                                                   This assumption is justified by the fact that we focus on
+                                                                              the problem of actuator placement. It will be relaxed later,
+                                                                              when the proposed thruster configuration will be evaluated
+                                                                              through nonlinear simulations; see Section IV-B.
+B. Modeling the Dynamics                                                           Under assumption 1, the total moment T c that enters in
+                                                                              (2), equals the moment induced by the propulsion system,
+   The kinematics and dynamics equations related to the                       i.e.,
+chaser’s attitude, are described by the following well-known
+equations, given in the so-called body frame [54], [55]:                                                    T c = Mt τ                               (4)
+                         1                                                    where τ ∈ Rnu : 0 ≤ τ j ≤ 1, j ∈ {1, . . ., nu } is the (normal-
+                    q̇ =   q⊗ω                                        (1)     ized) thrusters firing command vector; nu denotes the num-
+                         2               
+                    ω̇ = J −1 T c − ω × Jω .                          (2)     ber of thrusters; The matrix M t ∈ R3×nu is the so-called
+                                                                              induced-moment configuration matrix, defined by
+Here, q ∈ R refers to the chaser attitude’s quaternion and
+              4
+                                                                                                                                    
+“⊗” is the dot product from the quaternion algebra. ω ∈ R3                              M t = fmax P 1 × D1 · · · P nu × Dnu               (5)
+is the chaser’s angular rate, J is the inertia matrix of the
+                                                                                         P j = P j − P CoM , j ∈ {1, . . ., nu } .                   (6)
+chaser, and T c ∈ R3 is the sum of external moments applied
+to the chaser. The notation “c ” indicates that the vector is                P j and P CoM are, respectively, the position of the jth
+given in the chaser’s body frame.                                             thruster and the position of the chaser’s CoM, given in the
+     The relative position dynamics between the two space-                    chaser body frame. D j , j ∈ {1, . . ., nu } denotes the direction
+craft are derived from the so-called HCW equations (given                     of the jth thruster, given in the chaser body frame, and fmax is
+in the LVLH frame defined as the frame which origin is                        the maximum force produced by a thruster ( fmax = 30 N in
+the target CoM, x-axis completes the right hand, y-axis is                    our case). The columns of M t are the influence coefficients
+opposite and parallel to orbital angular momentum, z-axis                     defining how each thruster contributes to the 3-D moment
+is from target CoM to Earth CoM), since it is assumed as                      T c . As it can be seen on Fig. 3, the direction coefficients
+follows: 1) the target has a trajectory close to a Keplerian                  D j , j ∈ {1, . . ., nu } can take the following three values for
+circular orbit so that the true anomaly satisfies the third                   the case of the propulsion unit composed by 24 thrusters: 1)
+Kepler law; 2) the variations of the orbital angles (associated               D j = [1 0 0]T if the jth thruster parallels the x-axis of the
+to the target) are negligible with respect to the variations of               chaser frame; 2) D j = [0 1 0]T if the jth thruster parallels
+the true anomaly. The interested reader can refer to [56] and                 the y-axis; 3) D j = [0 0 1]T if the jth thruster parallels the
+[57] for more details                                                         z-axis.
+         ⎡                                 ⎤                                       In terms of forces and under Assumption 1, the total
+             O 3× 3              I 3                 
+         ⎢0                                                                   force F l that enters in (3), equals the force induced by the
+   ṙ    ⎢       0      0     0     0 2n⎥  ⎥ r       1 0                      thruster set., i.e.,
+       =⎢                                  ⎥      +          .
+   r̈    ⎣0 −n2         0     0     0 0 ⎦ ṙ         mc F l
+                                                                                                     F l = Rlc F c = Rlc M f τ.                      (7)
+           0     0     3n2 −2n 0 0
+                                                            (3)               F c ∈ R3 refers to the force vector caused by the thrusters,
+                                                                              given in the chaser’s body frame. Rlc denotes the rotation
+In this equation, r ∈ R3 refers to the 3-D relative position                  matrix in charge of change of coordinates from the chaser
+between the chaser and target CoM. n = μ/a3 is the target                     frame to the LVLH frame. The matrix M f ∈ R3×nu is the
+orbital angular rate, where μ is the Earth’s gravitational                    so-called induced-force configuration matrix, defined as
+parameter and a, the target orbit radius. mc is the mass of                                                             
+the chaser and F l ∈ R3 is the sum of external forces applied                                M f = fmax D1 · · · Dnu .                 (8)
+to the chaser. The notation “l ” indicates that the vector is
+                                                                              The columns of M f are the influence coefficients defining
+given in the LVLH frame.
+                                                                              how each thruster contributes to the 3-D force F c .
+    The models (2) and (3) depend on the orbit and chaser
+characteristics listed in Table I (rEarth denotes the radius of               D. Problem Formulation
+the Earth).
+                                                                                  Let us consider the following assumptions:
+C. Modeling the Thruster-Based Propulsion System
+                                                                              ASSUMPTION 2 The position of the CoM is assumed to be
+    In the following developments, the thrusters model is                     constant and known, i.e., P CoM is known and does not vary
+derived based on the lever arm principle, neglecting the                      (or it is assumed that its variations can be neglected).
+
+5278                             IEEE TRANSACTIONS ON AEROSPACE AND ELECTRONIC SYSTEMS VOL. 59, NO. 5 OCTOBER 2023
+
+  Authorized licensed use limited to: Harbin Institute of Technology. Downloaded on January 26,2026 at 11:42:59 UTC from IEEE Xplore. Restrictions apply.
+    It is then immediate to see that P j can be easily de-                            configuration matrix M = [M Tf M tT ]T with minimal
+termined from (6), as soon as P j is known, for all j ∈                               number of thrusters, is derived from the optimal
+{1, . . ., nu }. The thruster placement problem we focus on,                          values αij using (5), (8), and (9).
+can then be formulated as follows.                                                 4) The result is verified by seeking that no collinear
+                                                                                      column-vector exists in M t (fault diagnosabiity) and
+PROBLEM 1 Consider (1)–(8) and assume for simplicity,
+                                                                                      seeking that Um ⊆ Ci , ∀i (fault recoverability). Fi-
+that the positions P j , j ∈ {1, . . ., nu } are fixed. This assump-
+                                                                                      nally, an active FTC solution with the new thruster
+tion will be discussed later; see Remark 4. Let us introduce
+                                                                                      configuration matrix M is implemented in a highly
+the following new vectors D j , j ∈ {1, . . ., nu } that define
+                                                                                      representative nonlinear simulator of the capture
+the thrusters directions:
+                ⎧                                                                     mission, and tested through intensive nonlinear sim-
+                ⎪        j      j
+                ⎨Ry (α1 )Rz (α2 )D j if D j = [1 0 0]
+                                                           T
+                                                                                      ulations, considering both fault-free and faulty situ-
+                         j      j
+         D j = Rx (α1 )Rz (α2 )D j if D j = [0 1 0]T              (9)                 ations.
+                ⎪
+                ⎩R (α j )R (α j )D if D = [0 0 1]T
+                   x 1      y 2        j        j
+                                                                               A. Minimum Command Set Computation
+where Rx (αij ), Ry (αij ), and Rz (αij ) are αij -dependent rota-                 To proceed, let (1)–(8) be merged into a unique state-
+tion matrices for i ∈ {1, 2}, around the x, y, z axis, respec-                 space model, so that the control inputs are given in terms of
+tively. By such a parametrization, the DOFs of the problem                     torques T c and forces F c in spite of thruster firings τ, i.e.,
+are the number of thrusters nu , and the angles α1j and α2j
+per direction vector, defining a new direction vector D j                                   ẋ = f (x, u, ρ )    x ∈ Rnx , u ∈ U, ρ ∈ .              (10)
+from D j . The goal we pursue is to determine nu , α1j , and                                                                                 T    T
+                                                                               In this equation, x = [qT ωT rT ṙT ]T , u = [T c F c ]T =
+α2j , such that the fault diagnosability and recoverability are
+                                                                               Mτ, and ρ gathers all uncertainties listed in Table I. U is the
+satisfied, preserving avionics contamination and the mission
+                                                                               set of attainable domain for the command u, and  is the set
+objectives.
+                                                                               ranges by the uncertainties. Note that since all uncertainties
+    In other words, we are seeking the minimum number of                       are independent and bounded,  is a hyper-rectangle.
+thrusters of a new thruster configuration derived form the                         U takes different definitions whenever a fault occurs in
+original 24-based thruster configuration illustrated in Fig. 3,                a thruster or not. Typically, a fault occurring in a thruster
+with the same positions, but with new orientations.                            leads to a loss of a region of the attainable domain for u,
+                                                                               compared with the fault-free situation. Thus, we propose
+III. MAIN RESULT                                                               the following definition for the recoverability criteria.
+    In order to solve Problem 1, it is formulated as a
+                                                                               DEFINITION 1 The system (10) is said to satisfy the recov-
+nonlinear constrained optimization problem. The solution
+                                                                               erability property for a fault i with corresponding control
+obtained from the optimization process, consists of the deci-
+                                                                               set Ui , if there exists a state trajectory x(t ) such that
+sion variables αij , i ∈ {1, 2} that entirely define the thruster
+configuration matrices M t and M f ; see (5)–(9).                                                 ⎧
+                                                                                                  ⎪
+                                                                                                  ⎪ ẋ(t ) = f (x(t ), u(t ), ρ )
+    The flowchart of the design and the analysis, can be                                          ⎪
+                                                                                                  ⎪
+                                                                                                  ⎪
+                                                                                                  ⎨u(t ) ∈ Ui , ρ ∈ 
+summed up as follows. Assume that the thruster configura-
+tion matrices M t and M f have been parametrized according                                          x(tz ) = xref (tz )                    (11)
+                                                                                                  ⎪
+                                                                                                  ⎪
+to the decision variables αij according to (9) as follows.                                        ⎪
+                                                                                                  ⎪ ∀t    ∈ { 0 , . . ., t  }
+                                                                                                  ⎪
+                                                                                                  ⎩
+                                                                                                       z                  Z
+                                                                                                    ∀t ∈ [0, tZ ] .
+    1) An over-approximation of the minimum
+       torque/force command set necessary to accomplish                        Here xref refers to the attitude and relative position trajec-
+       the capture mission described in Section II-A, is                       tories to track (see Section II-A), defined as Z + 1 points
+       first computed. This set will be denoted Um .                           xref (tz ). By guaranteeing x(tz ) = xref (tz ) for judiciously cho-
+    2) Next, a αij -dependent recoverability criterion is                      sen points Z + 1, we argue that the mission objectives are
+       established in terms of the inclusion of Um in                          fulfilled.
+       the torque/force domains attainable by the set of
+       thrusters in faulty situations. These latest sets will                      Following Definition 1, we need to determine the min-
+       be denoted Ci , ∀i. The diagnosability property is                      imum command set in torques/forces Um ⊆ R6 , which is
+       also formulated as a set of αij -dependent constraints,                 necessary to track the trajectory described in Section II-A,
+       as well as avionics contamination constraints. It is                    for all uncertainties behaving in . In this work, Um is
+       shown that the diagnosability property can be ex-                       considered to be a polytope of L facets, i.e., Um = {um :
+       pressed in terms of the nonexistence of collinear                       Lum ≤ e}. um is the force and torque commands induced by
+       column-vectors in the induced-moment configura-                         the thrusters, that allows the spacecraft to track the required
+       tion matrix M t .                                                       trajectory. Then, the following problem which naturally
+    3) The αij -parametrized nonlinear constrained opti-                       arises from (11), enables to determine the vector e:
+       mization problem is derived and solved by means
+       of hybrid optimization techniques. A new thruster                          min e
+                                                                                  x,um ,e
+
+
+FAURÉ ET AL.: OPTIMIZATION OF SPACECRAFT THRUSTERS CONFIGURATION                                                                                      5279
+
+Authorized licensed use limited to: Harbin Institute of Technology. Downloaded on January 26,2026 at 11:42:59 UTC from IEEE Xplore. Restrictions apply.
+      ⎧                                                                       fault is recoverable using only the remaining nu -1 fault-free
+      ⎪
+      ⎪x((k + 1)Ts ) = f d (kTs , x(kTs ), um (kTs ), ρ )
+      ⎪
+      ⎪                                                                       thrusters.
+      ⎪
+      ⎨Lum (kTs ) ≤ e                                                               In this article, we propose to approach the fault-
+  s.t. x(kz Ts ) = xref (kz Ts )                                    (12)
+      ⎪
+      ⎪                                                                       recoverability property, by introducing a cost function based
+      ⎪
+      ⎪∀kz Ts ∈ {0, . . ., tZ }
+      ⎪
+      ⎩
+                                                                              on the aforementioned inclusion principle. The idea is to
+       ∀k ∈ {0, . . ., Z} .                                                   look for the thruster directions, formally characterized by
+                                                                              the parameters αij according to (9), so that Um ⊆ C j ∀ j. In
+In this optimization problem, the first constraint corre-                     other words, we look for a new thruster configuration matrix
+sponds to the model given by (1), (2), and (3), converted                     M so that the torque/force command domain is a subset of
+to discrete time by means of the Euler approximation, at                      all domains C j ∀ j that are attainable with only nu -1 thrusters.
+sample time Ts . The obtained minimum polytope Um is, thus,                   The cost function that we propose, is the sum of the distance
+of dimension six. This polytope is obviously independent of                   between the vertices of the polytope Um and the zonotope
+the thruster configuration, since it corresponds to a domain                  C j , i.e.,
+given in terms of forces and torques. This aspect is a key
+ingredient of our approach; see the following section.
+                                                                                                       nu -1 
+                                                                                                            nv 
+                                                                                                                nf
+                                                                                                J =                    H jf u∗v − w jf .           (14)
+REMARK 1 Note that, by definition, the convex hull of the                                                j    v    f
+optimized command trajectory u∗m , is nothing else than Um ,                  This distance is negative if the vertices of Um ⊆ C j . In (14),
+i.e., Um = {um : Lum ≤ e∗ } = conv(u∗m ).                                     n f is the number of facets of C j . u∗v refers to the v th vertex
+                                                                              associated to Um and nv refers to its number of vertices.
+REMARK 2 It should be outlined that, determining the
+                                                                              (H j , w j ) is the H-representation associated to (13).
+polytope Um for all uncertainties belonging to , is an
+                                                                                   Since the configuration matrix M has been parametrized
+infinite dimension problem. This problem is practically
+                                                                              by αij according to (9), so is the reduced matrix
+approached by performing a sufficient dense gridding of
+                                                                              M 1,.., j−1, j +1,..,nu . Thus, so is the zonotope C j and its H-
+ and by seeking a polytope that contains all command
+                                                                              representation (H j , w j ) that enters in (14). This means
+trajectories associated to the gridding points, by means of
+an over-approximation. This may lead to a conservative                        that in (14), the decision variables are αij , i ∈ {1, 2}, j ∈
+polytope Um , but we argue that by managing adequately the                    {1, nu -1} and nu .
+process, a reasonable conservative solution can be obtained                   C. Fault-Diagnosability Criterion
+for Um ; see Fig. 5 .
+                                                                                  As it is shown in [40] and [41], guaranteeing the fault
+B. Fault-Recoverability Criterion                                             diagnosability of thruster faults, is equivalent to enforce no
+                                                                              collinear 3-D torques induced by the thruster configuration
+    Following the studies reported in [40] and [41], we con-                  and to enforce that each thruster produces some torque.
+sider in this work that, when a given thruster has been identi-               This is equivalent to say that faults are diagnosable, if there
+fied by an FDI algorithm to be faulty (say the jth), it is turned             does not exist collinear column-vectors in the matrix M t (αij )
+OFF using a dedicated latch valve. So, when dealing with the
+                                                                              j ∈ {1, . . ., nu }, i ∈ {1, 2}. This leads to the following fault
+fault j, it is considered that the jth thruster is unavailable and            diagnosability criterion:
+produces no thrust. In terms of torques and forces, such a                                                         
+                                                                                             qT j r j 
+situation can be modeled by removing the jth thruster firing                                 M t ( αi ) M t ( αi ) 
+command τ j and the jth column of the thruster configuration                                                        ≤ δ, 0 ≤ δ < 1
+                                                                                           q j  r j 
+matrix M, so that the torque/force command is given by                                     M t ( αi )   M t ( αi ) 
+u = M 1,..., j-1, j+1,nu [τ j,..., j-1 , τ j+1,...,nu ]T .                                            
+                                                                                           q j 
+    Because 0 ≤ τ j ≤ 1, ∀ j, the domain in which τ j takes                                M t ( αi )  ≥ η
+its value is a hyper-cube of dimension nu -1, with center’s                               q ∈ {1, . . ., nu } , r ∈ {1, . . ., nu } , q = r
+coordinates 21 1nu −1 and matrix generator 21 Inu −1 , which
+is a particular zonotope whose expression is given by                                     j ∈ {1, . . ., nu }, i ∈ {1, 2}.                         (15)
+1
+2
+  Z{1nu −1 , Inu −1 }. Thus, the image of this zonotope through               In this equation, M tr and M tq refer to the rth and the qth
+M 1,..., j-1, j+1,nu , is a zonotpe given by                                  column of M t , respectively. δ is a positive scalar that gives
+                                                                              a measure of the angle between two column-vectors of M t .
+                  1                                         
+          Cj =      M 1,.., j−1, j +1,..,nu Z 1nu −1 , Inu −1 .     (13)      Note that looking for the minimal value of δ allows to obtain
+                  2                                                           the “maximum degree of diagnosability.” η is a positive
+C j is nothing else than the domain in which the torque/force                 scalar that gives a measure of the minimum torque produced
+command u evolves, when removing the jth thruster from                        by the thrusters.
+the thrusters set. It follows that the reference trajectory
+xref is feasible despite the loss of the jth thruster, if the                 D. Constraints on Avionics Contamination
+command set Um is a subset of the set C j , i.e., Um ⊆ C j .                     The recoverability and fault-diagnosability properties
+This simply means that the tracking of the trajectory can be                  being formulated, we are now interested in formulating
+ensured with the remaining nu -1 fault-free thrusters, i.e., the              constraints on avionics contamination. Since the DOFs
+
+5280                             IEEE TRANSACTIONS ON AEROSPACE AND ELECTRONIC SYSTEMS VOL. 59, NO. 5 OCTOBER 2023
+
+  Authorized licensed use limited to: Harbin Institute of Technology. Downloaded on January 26,2026 at 11:42:59 UTC from IEEE Xplore. Restrictions apply.
+α1j and α2j that enter the thruster directions matrix D j
+∀ j ∈ {1, . . ., nu } determine the orientation of the thrusters,
+it seems obvious that the key element to avoid avionics con-
+tamination, consists in constraining the admissible values
+for α1j , α2j ∀ j ∈ {1, . . ., nu }
+
+       α ij ≤ αij ≤ α ij i ∈ {1, 2}, j ∈ {1, . . ., nu } .            (16)
+
+Typically, the bounds α ij and α ij are determined so that
+thrusters can be reoriented within a “pyramid” with some
+given a priori side β. By such a pyramidal parametrization,
+we enforce the thrusters to have no firing in the direction of
+the avionics.                                                                   Fig. 4. New configuration of the thrusters after optimization (arrow =
+                                                                                      opposite directions) and avionics contamination constraints.
+REMARK 3 Note that α ij = 0 and α ij = 0 for some (i, j ).
+This indicates that some thrusters cannot be oriented in the
+direction of the spacecraft, which seems to be an evidence;
+see Fig. 3 for a good understanding.
+
+E. Numerically Tractable Solution
+    The following proposition gives a numerically tractable
+approach to the thrusters placement problem under fault
+recoverability and diagnosability properties.
+    Consider (14)–(16), and let nu be a priori chosen. Then,
+the solution of the following nonlinear constrained opti-                       Fig. 5. Zonotope C1 (gray) and polytope Um (black), given in forces.
+mization problem solves Problem 1:
+
+               min γ J + (1 − γ )δ                                             IV. RESULTS AND ASSESSMENT ON THE REFERENCE
+              a1j ,a2j ,δ                                                          SCENARIO
+                    
+                        (15) (fault diagnosability)                            A. Computational Issues
+             s.t.                                                     (17)
+                        (16) (avionics contamination).                                The minimum command set Um is first determined by
+                                                                               solving the optimization problem (12). The optimization
+The decision variables are αij , i ∈ {1, 2}, j ∈ {1, . . ., nu }               problem (18) is next solved, to determine the variables αij .
+and δ. 0 ≤ γ ≤ 1 is a scalar, that plays the role of a penalty                 Since we are interested in determining the minimum number
+parameter for the criteria to be optimized.                                    of thrusters, an iterative refinement has been done over nu .
+     As it is formulated, the optimization problem (17) is a                   The principle consists in finding iteratively the minimum
+multicriteria optimization problem whereby the choice of                       value of nu so that (18) admits a solution. The obtained
+γ is guided by the Pareto optimal points. This illustrates                     result is nu = 14, with the following choice for δ, η and
+the fact that improving the fault recoverability property                      α ij , α ij :
+(i.e., γ → 1) will degrade the fault diagnosability, and vice-                         ⎧
+                                                                                       ⎨ 0 ≤ α1 ≤ β
+                                                                                                 14
+versa. Thus, in practice, δ is better considered as a parameter
+to be selected by the designer, since finding an “optimal”                                  −β ≤ α1j ≤ 0            j ∈ {2, 4, 13}
+                                                                                       ⎩            j
+value for δ is highly related to the avionics architecture and                              −β ≤ αi ≤ β i ∈ {1, 2} otherwise
+the mission performance. So, the optimization problem (17)                                     δ = cos 25 ◦ η = 10 N.m β = 45◦ .                    (19)
+is reduced to
+                                                                              Note that all optimizations were performed with the genetic
+                    (15) (fault diagnosability)                                algorithm from the global optimization toolbox of MAT-
+      min J s.t.                                           (18)                LAB, followed by FMINCON, that continues the optimization
+        j j
+      a1 ,a2        (16) (avionics contamination)
+                                                                               after the genetic algorithm terminates. The population size
+where the decision variables are αij .                                         for the genetic algorithm has been fixed to 400.
+                                                                                   Fig. 4 gives an illustration of the obtained thrusters
+REMARK 4 Its seems obvious that the thruster positions                         configuration. The numbering of the thrusters (from 1 to 14)
+P j , j ∈ {1, . . ., nu } can be parametrized by some variables,               is as illustrated in Fig. 4. Figs. 5 and 6 give two examples of
+so that the optimization problem (18) can be augmented by                      the results from the optimization procedure. The polytope
+these decision variables. This solution has been evaluated,                    Um (black) is also plotted, superimposed with the zonotopes
+but it has not been retained, since the optimization problem                   C1 (Fig. 5) and C11 (Fig. 6) (gray), all given in forces. As it
+(18) turned out to be numerically with huge computational                      can be seen, the recoverability property is guaranteed for any
+burdens.                                                                       faults occurring in the thrusters n.1 and 11 since Um ⊆ C1
+
+FAURÉ ET AL.: OPTIMIZATION OF SPACECRAFT THRUSTERS CONFIGURATION                                                                                     5281
+
+Authorized licensed use limited to: Harbin Institute of Technology. Downloaded on January 26,2026 at 11:42:59 UTC from IEEE Xplore. Restrictions apply.
+                                                                              torques that are nearly collinear. Conversely, a value of W
+                                                                              at coordinates (q, r ) which is close to “1,” means that the
+                                                                              fault occurring in the thruster q can be discriminated from
+                                                                              a fault occurring in the thruster r, using a model-based FDI
+                                                                              algorithm. As it can be seen, all terms in W are higher than
+                                                                              0.094, except for the diagonal. This demonstrates that the
+                                                                              fault-diagnosability property is achieved for the so-derived
+                                                                              thrusters configuration, thanks to the constraint stated by
+                                                                              (15). Values on the diagonal of W are obviously all equal to
+ Fig. 6. Zonotope C11 (gray) and polytope Um (black), given in forces.        zero, because a vector is collinear with itself. Note that the
+                                                                              couples of thrusters associated with the bold values have an
+                                                                              angle of more than 80 ◦ . This non-collinearity constraint is
+                                                                              also clearly visible on Fig. 7, as well as the norm constraint
+                                                                              on the columns of M t : No vector has a norm less than η =
+                                                                              10 N.m.
+
+                                                                              B. Nonlinear Simulations
+                                                                                  Nonlinear simulations are next conducted considering
+                                                                              the so-derived 14-based thruster configuration. The refer-
+                                                                              ence mission described in Section II-A is modeled into a
+                                                                              functional engineering simulator (FES) developed in MAT-
+                                                                              LAB/Simulink, using the library called SPACELAB. This
+       Fig. 7. Direction of the moments of the optimized thruster             library contains highly realistic models for sensors and
+                             configuration.                                   actuators (misalignment effects, dead-zone, MIB effect,...).
+                                                                              We recall that the considered scenario consists of the final
+                                                                              phase of a capture maneuver of a spinned spacecraft, by
+and Um ⊆ C11 , respectively. Since this property yields for                   a chaser spacecraft; see Section II-A. The FES contains
+all C j , j ∈ {1, . . ., 14}, we argue that the fault-recoverability          environmental disturbances that affect rotational and trans-
+property is ensured for new configuration of the thrusters.                   lational dynamics of the spacecraft. For both spacecraft
+     The diagnosability matrix W is next computed to ana-                     (chaser and target), the considered disturbances are cen-
+lyze the fault-diagnosability property; see (20) shown at the                 tral body acceleration, nonspherical gravity acceleration,
+bottom of this page. This matrix is based on the diagnos-                     gravity gradient torque, solar radiation pressure, third-body
+ability criterion (15) and is defined so that its value at coor-              perturbation (moon and sun), Earth magnetic torque, and
+                                         T
+                                     |M q M r |
+dinates (q, r ) is given by 1 − M qt Mt r , (q, r ) ∈ {1, . . ., 14}.         aerodynamic drag. Propellant sloshing and solar array flex-
+                                   t    t
+The directions of the induced-torques (i.e., the column                       ible modes are also considered in the simulator, in order to
+vectors of M t ) are also plotted in Fig. 7                                   provide a realistic simulation environment.
+    A value at a given coordinate, say (q, r ), which is close                    The FDI algorithm that is implemented in the simulator
+to “0,” means that it is not possible to isolate a fault in                   (which is a part of the control unit), consists of a bank
+the thruster q from a fault in the thruster r by means of a                   of unknown input observers (UIO); see [41] and [42] for
+model–based FDI algorithm, since such thrusters produce                       material backgrounds. The FTC algorithm relies on the CA
+
+
+              ⎡                                                                                                                       ⎤
+            0.00          0.12    0.63       0.80   0.65    0.38     0.64    0.28     0.45     0.16    0.97     0.14     0.43    0.93
+          ⎢ 0.12          0.00    0.59       0.97   0.94    0.79     0.78    0.46     0.73     0.09    0.77     0.43     0.89    0.53 ⎥
+          ⎢                                                                                                                           ⎥
+          ⎢ 0.63          0.59    0.00       0.13   0.51    0.57     0.27    0.63     0.23     0.99    0.09     0.97     0.98    0.38 ⎥
+          ⎢                                                                                                                           ⎥
+          ⎢ 0.80          0.97    0.13       0.00   0.82    0.32     0.30    0.59     0.09     0.67    0.30     0.99     0.68    0.81 ⎥
+          ⎢                                                                                                                           ⎥
+          ⎢ 0.65          0.94    0.51       0.82   0.00    0.43     0.23    0.25     0.83     0.76    0.20     0.23     0.14    0.09 ⎥
+          ⎢                                                                                                                           ⎥
+          ⎢ 0.38          0.79    0.57       0.32   0.43    0.00     0.95    0.66     0.09     0.88    0.97     0.30     0.09    0.61 ⎥
+          ⎢                                                                                                                           ⎥
+          ⎢ 0.64          0.78    0.27       0.30   0.23    0.95     0.00    0.09     0.66     0.40    0.10     0.32     0.56    0.39 ⎥
+       W =⎢                                                                                                                           ⎥.           (20)
+          ⎢ 0.28          0.46    0.63       0.59   0.25    0.66     0.09    0.00     0.99     0.19    0.34     0.09     0.39    0.56 ⎥
+          ⎢ 0.45          0.73    0.23       0.09   0.83    0.09     0.66    0.99     0.00     0.99    0.55     0.57     0.36
+                                                                                                                                      ⎥
+                                                                                                                                 0.99 ⎥
+          ⎢
+          ⎢ 0.16          0.09    0.99       0.67   0.76    0.88     0.40    0.19     0.99     0.00    0.81     0.29     0.79    0.83 ⎥
+          ⎢                                                                                                                           ⎥
+          ⎢ 0.97          0.77    0.09       0.30   0.20    0.97     0.10    0.34     0.55     0.81    0.00     0.57     0.61    0.18 ⎥
+          ⎢                                                                                                                           ⎥
+          ⎢ 0.14          0.43    0.97       0.99   0.23    0.30     0.32    0.09     0.57     0.29    0.57     0.00     0.17    0.56 ⎥
+          ⎢                                                                                                                           ⎥
+          ⎣ 0.43          0.89    0.98       0.68   0.14    0.09     0.56    0.39     0.36     0.79    0.61     0.17     0.00    0.30 ⎦
+            0.93          0.53    0.38       0.81   0.09    0.61     0.39    0.56     0.99     0.83    0.18     0.56     0.30    0.00
+
+
+5282                             IEEE TRANSACTIONS ON AEROSPACE AND ELECTRONIC SYSTEMS VOL. 59, NO. 5 OCTOBER 2023
+
+  Authorized licensed use limited to: Harbin Institute of Technology. Downloaded on January 26,2026 at 11:42:59 UTC from IEEE Xplore. Restrictions apply.
+technique described in [41], which operates at the thruster
+management function; see Fig. 2 for the architecture of
+the GNC, if necessary. The proposed fault accommodation
+strategy works as follows: As soon as the faulty thruster
+is diagnosed by the UIO-based FDI unit, it is deactivated
+using the dedicated pipe valve and the forces and torques
+computed by the six-DOF controller are reallocated among
+the 13 healthy thrusters. For that purpose, the CA algo-
+rithm is further constrained so that the jth firing command
+signal is enforced to zero, where j denotes the thruster
+that has been identified to be faulty by the UIO-based
+FDI unit.
+     It is obvious that the proposed FTC solution is not the
+only one that can be used. Rather, many solutions reported
+in the literature have the potential to solve the FTC problem,
+thanks to the fault-diagnosability and recoverability prop-
+erties. This is the core element of the optimization problem
+(18). By considering fault-diagnosability and recoverability
+properties as constraints into the optimization process of the
+thruster-placement problem, we guarantee the existence of
+an FTC solution. Thus, the goal of the following is not to                          Fig. 8. Behavior of the attitude tracking error. The 200 faulty
+do a comparison of existing viable FTC solutions. The aim                            simulations are plotted in blue and the fault-free simulations.
+is just to demonstrate that the problem is well posed for the
+optimized 14-based thruster configuration (see Fig. 4). Let
+us recall that this was not the case for the original 24-based
+thruster configuration illustrated in Fig. 3, mostly due to the
+fact that the fault diagnosability property is not fulfilled;
+see [41] if necessary.
+     200 stuck-open faults and ten fault-free situations are
+considered, the fault-time occurrence being chosen ran-
+domly. The simulations are performed so that all the 14
+thrusters are covered, and so that faults occur at the thruster
+firing level. With regards to uncertainties, each simulation is
+performed so that parameters listed in Table I are randomly
+chosen in their respective range.
+     Figs. 8 and 9 illustrate the behavior of the attitude and
+relative position tracking error. We recall that stuck-open
+faults correspond to a thruster normally operating and,
+suddenly goes to a full firing. Such faults have abrupt
+profiles and correspond to totally uncontrollable actuators.
+The consequence is generally the saturation of some of the
+remaining fault-free actuators, since the control loop tries                    Fig. 9. Behavior of the relative position tracking error. The 200 faulty
+to allocate the force and torque commands on them, at least                          simulations are plotted in blue and the fault-free simulations.
+before the faulty actuator is diagnosed and recovered. This
+causes a transient behavior of the controlled attitude and                     relative position tracking error is close to ≈ 4 cm along the
+relative position, as it can be observed on Figs. 8 and 9.                     three axes, whenever the control is assumed with one less
+     In terms of control performance, it can be seen on Fig. 8                 thruster. Finally, note that during the last 20 s before the
+that the attitude tracking error is less than ≈ [6, 5, 6]◦ along               chaser reaches the capture point (i.e., 80 s ≤ t ≤ 100 s), the
+the three axis (roll φ (t ), pitch θ (t ), and yaw ψ (t )) during              obtained performance in faulty situations (blue plots) are
+the first 80 s of the trajectory, despite the fault occurrence.                the same than those obtained in fault-free situations.
+At the capture point, i.e., at t = 100 s, it is observed an                        From these results, we argue that all investigated faulty
+attitude misalignment less than ≈ 0.6◦ along the three axes,                   situations are correctly accommodated at the GNC level,
+despite a thruster is still uncontrollable. With regards to the                thanks to the optimal 14-based thruster configuration.
+relative position performance, it can be seen on Fig. 9 that                       Hence, we argue that the solution proposed in this article
+the tracking error is less than ≈ [15, 14, 18] cm over the x-y-                offers a useful approach to determine spacecraft thrusters
+z axes during the forced translation (displacement P0 → P1 ,                   configurations, under fault-diagnosability and recoverabil-
+see Section II-A if necessary). At the capture point, the                      ity properties.
+
+
+FAURÉ ET AL.: OPTIMIZATION OF SPACECRAFT THRUSTERS CONFIGURATION                                                                                       5283
+
+Authorized licensed use limited to: Harbin Institute of Technology. Downloaded on January 26,2026 at 11:42:59 UTC from IEEE Xplore. Restrictions apply.
+V. CONCLUSION                                                                  [8] A. Zolghadri, D. Henry, J. Cieslak, D. Efimov, and P. Goupil, Fault
+                                                                                   Diagnosis and Fault-Tolerant Control and Guidance for Aerospace
+    This article proposed an optimization approach to de-                          Vehicles: From Theory to Application (Advances in Industrial Con-
+termine spacecraft thruster configurations that ensure fault-                      trol Series). Springer. 2014.
+                                                                               [9] S. Ding, Advanced Methods for Fault Diagnosis and Fault-Tolerant
+diagnosability and recoverability properties, in case of a                         Control. Springer, 2020.
+single thruster fault. By guaranteeing such properties, it is                 [10] J. M. Hutton, A Closer Look At Fault-Tolerant Control. Nova Science
+guaranteed the existence of a model-based fault DX and                             Publishers, 2020.
+fault-tolerant solution at the control software level. In this                [11] J. Lan and R. Patton, Robust Integration of Model-Based Fault
+sense, these properties can be seen as controllability and                         Estimation and Fault-Tolerant Control. Berlin, Germany: Springer,
+                                                                                   2021.
+observability properties for control. The method first es-                    [12] M. Blanke, M. Kinnaert, M. Lunze, and M. Staroswiecki, Diagnosis
+tablishes an over-approximation of the minimum command                             and Fault Tolerant Control. Berlin, Germany: Springer Verlag, 2006.
+set necessary to perform a given mission, formulated in                       [13] X. Pucel, “A unified point of view on diagnosability,” Ph.D. disserta-
+terms of a polytope. Then, we propose an optimization                              tion, Institut National des Sciences Appliqués de Toulouse, Toulouse,
+procedure based on the concept of zonotopes, to determine                          France, 2008.
+                                                                              [14] A. Vignolles, E. Chanthery, and P. Ribot, “An overview on diagnos-
+a thruster configuration able to produce a command set                             ability and prognosability for system monitoring,” Proc. PHM Soc.
+which is ideally a superset of the minimum one, for all                            Eur. Conf., vol. 5, no. 1 pp. 1–11, 2020.
+considered faults. The proposed method is evaluated on a                      [15] R. Patton, P. Frank, and R. Clark, Issues of Fault Diagnosis for
+realistic scenario that corresponds to the final phase of an                       Dynamic Systems. London, U.K.: Springer, 2000.
+on-orbit capture mission. Simulation results under a highly                   [16] M. Staroswiecki and G. Comtet-Varga, “Fault detectability and isola-
+                                                                                   bility in algebraic dynamic systems,” in Proc. Eur. Control Conf.
+realistic simulation environment, demonstrate the efficiency                       (ECC), Karlsruhe, Germany, 1999, pp. 1334–1339.
+of the proposed approach.                                                     [17] M. Basseville, “On fault detectability and isolability,” Eur. J. Control,
+    In the presented work, the thruster’s positions have been                      vol. 7, no. 6, pp. 625–637, 2001.
+considered a priori known. This enables reduction of the                      [18] A. Shumsky and M. Staroswiecki, “Fault detectability and isolability
+number of decision variables of the optimization problem,                          for nonlinear uncertain systems,” IFAC Proc. Volumes, vol. 36, no. 5,
+                                                                                   pp. 603–608, 2003.
+thus avoiding numerical difficulties. A research direction                    [19] A. Madalinski, F. Nouioua, and P. Dague, “Diagnosability verifica-
+to solve this problem may consist in using the paradigm                            tion with petri net unfoldings,” Int. J. Knowl. Based Intell. Eng. Syst.,
+of the so-called “support functions.” Support functions is                         vol. 14, pp. 49–55, 2010.
+a formalism to represent convex sets such as ellipsoids,                      [20] F. Basile, P. Chiacchio, and G. De Tommasi, “Decentralized k-
+zonotopes, and polytopes, in both their H and V repre-                             diagnosability of petri nets,” IFAC Proc. Volumes, vol. 45, no. 29,
+                                                                                   pp. 214–220, 2012.
+sentations. Advantages of the support functions are that                      [21] M. Zanella, “Asymmetric diagnosability analysis of discrete-event
+they are closed under linear mapping, Minkowski sum, and                           systems,” in Proc. 28th Int. Workshop Princ. Diagnosis, (Kalpa
+intersection. This enables their manipulation with a weak                          Publications in Computing Series), vol. 4, M. Zanella, I. Pill, and
+numerical complexity. With this paradigm, reduction of the                         A. Cimatti, Eds., 2018, pp. 78–93.
+complexity of the optimization problem, and thus the pos-                     [22] L. Ye, P. Dague, and L. He, “Manifestability verification of discrete
+                                                                                   event systems,” in Proc. 30th Int. Workshop Princ. Diagnosis, Kla-
+sibility of including the decision variables corresponding                         genfurt, Austria, 2019, pp. 1–9.
+to the thruster’s positions in the optimization problem is                    [23] I. Issury, D. Henry, C. Charbonnel, E. Bornschlegl, and X. Olive,
+expected. This is currently being researched.                                      “A boolean algebraic-based solution for multiple fault diagnosis:
+                                                                                   Application to a spatial mission,” Aerosp. Sci. Technol., vol. 28,
+REFERENCES
+                                                                                   pp. 214–226, 2013.
+ [1] E. Bornschleg, “ESA R&D advanced fault detection and isolation           [24] N. Verdière, C. Jauberthie, and L. Travé-Massuyès, “Functional diag-
+     (FDI) fault tolerant control (FTC),” in Proc. IEEE/UE Workshop                nosability and detectability of nonlinear models based on analytical
+     Ind. Academic Experience Aerosp. Fault Detection Diagnosis, 2012.             redundancy relations,” J. Process Control, vol. 35, no. 11, pp. 1–10,
+ [2] E. Kircher and A. Benoit, “Technology R&D at ESA and perspective              2015.
+     for FDI,” in Proc. IEEE/UE Workshop Ind. Academic Experience             [25] C. Pérez-Zuniga, J. Sotomayor-Moriano, E. Chanthery, L. Travé-
+     Aerosp. Fault Detection Diagnosis, 2012.                                      Massuyès, and M. Soto, “Flotation process fault diagnosis via struc-
+ [3] G. Ortega and A. Martinez, “FDI/FTC technology developments in                tural analysis,” IFAC-PapersOnLine, vol. 52, no. 14, pp. 225–230,
+     ESA,” in Proc. UE-FP7 Workshop FDIR Reconfiguration Control                   2019.
+     Flight, 2016.                                                            [26] M. Bayoudh and L. Travé-Massuyès, “Diagnosability analysis of
+ [4] P. Colmenarejo et al., “Advanced GNC for In-Orbit autonomous                  hybrid systems cast in a discrete-event framework,” Discrete Event
+     Assembly of flexible vehicles–IOA-GNC,” in Proc. Int. Astronau-               Dyn. Syst., vol. 24, pp. 309–338, 2014.
+     tical Congr., Bremen, Germany, 2018. [Online]. Available: https:         [27] H. Zaatiti, L. Ye, P. Dague, and J. Gallois, “Counterexample-guided
+     //iafastro.directory/iac/archive/browse/IAC-18/D1/3/46904/                    abstraction-refinement for hybrid systems diagnosability analysis,”
+ [5] P. Colmenarejo, N. Santos, J. Telaarc, C. Ott, D. Henry, and G.               in DX, pp. 124–143, 2017.
+     Visentin, “Results of the COMRADE project: Combined control              [28] S.-Y. Hsieh and Y.-S. Chen, “Strongly diagnosable product networks
+     for robotic spacecraft and manipulator in servicing missions: Active          under the comparison diagnosis model,” IEEE Trans. Comput.,
+     debris removal and re-fuelling,” in Proc. 11th Int. ESA Conf. Guid.,          vol. 57, no. 6, pp. 721–732, Jun. 2008.
+     Navigation Control Syst. (GNC), Sopot, Poland, Jun. 2021. [Online].      [29] Y. Hua, Q. Li, Z. Ren, and C. Liu, “A data driven method for
+     Available: https://elib.dlr.de/147154/                                        quantitative fault diagnosability evaluation,” in Proc. Chin. Control
+ [6] M. Syfert, A. Sztyber, and J. Koscielny, Advanced Solutions in                Decis. Conf., 2016, pp. 1890–1894.
+     Diagnostics and Fault Tolerant Control. Springer, 2017.                  [30] B. C. Moore, “Principal component analysis in linear systems: Con-
+ [7] A. Varga, Solving Fault Diagnosis Problems: Linear Synthesis Tech-            trollability, observability, and model reduction,” IEEE Trans. Autom.
+     niques. Springer, 2017, vol. 84.                                              Control, vol. 26, no. 1, pp. 17–32, Feb. 1981.
+
+
+5284                             IEEE TRANSACTIONS ON AEROSPACE AND ELECTRONIC SYSTEMS VOL. 59, NO. 5 OCTOBER 2023
+
+  Authorized licensed use limited to: Harbin Institute of Technology. Downloaded on January 26,2026 at 11:42:59 UTC from IEEE Xplore. Restrictions apply.
+[31] C. W. Frei, F. J. Kraus, and M. Blanke, “Recoverability viewed              [52] J. Cieslak et al., “Assessment of a supervisory fault-hiding scheme
+     as a system property,” in Proc. Eur. Control Conf., 1999,                        in a classical guidance, navigation and control setup: The e.Deorbit
+     pp. 2197–2202.                                                                   mission,” in Proc. IEEE 4th Conf. Control Fault Tolerant Syst., 2019,
+[32] B. González-Contreras, D. Theilliol, and D. Sauter, “On-line recon-              pp. 7–12.
+     figurability evaluation for actuator faults using input/output data,”       [53] D. Henry, J. Zenteno-Torres, J. Cieslak, A. F. De Loza, and J.
+     in Proc. 7th IFAC Symp. Fault Detection, Supervision Saf. Tech.                  Dávila, “A 6-DOF sliding mode fault tolerant control solution for
+     Processes, 2009, vol. 42, no. 8, pp. 674–679.                                    in-orbit autonomous rendezvous,” Aerosp. Sci. Technol., vol. 118,
+[33] M. Tahavori and A. Hasan, “Fault recoverability for nonlinear sys-               2021, Art. no. 107050.
+     tems with application to fault tolerant control of UAVs,” Aerosp. Sci.      [54] R. Wisniewski, Lecture Notes on Modelling of a Spacecraft. Aalborg
+     Technol., vol. 107, 2020, Art. no. 106282.                                       Universitet, Aldeling for Proceskontrol, 2000.
+[34] H. Shaker, “Control reconfigurability of bilinear systems,” J. Mech.        [55] B. Wied, Space Vehicle Dynamics and Control. Reston, VA, USA:
+     Sci. Technol., vol. 27, no. 4, pp. 1117–1123, 2013.                              American Institute of Aeronautics and Astronautics, 1998.
+[35] N. E. Wu, K. Zhou, and G. Salomon, “Control reconfigurabil-                 [56] W. H. Clohessy and R. S. Wiltshire, “Terminal guidance system for
+     ity of linear time-invariant systems,” Automatica, vol. 36, no. 11,              satellite rendezvous,” J. Aerosp. Sci., vol. 27, no. 9, pp. 653–658,
+     pp. 1767–1771, 2000.                                                             1960.
+[36] Z. Yang, S. Hua, Q. Hongzhuan, and L. Chengrui, “Control reconfig-          [57] H. Djojodihardjo, “Influence of the Earth’s dominant oblateness
+     urability of nonlinear system based on control redundancy,” in Proc.             parameter on the low formation orbits of micro-satellites,” Int. J.
+     IEEE 10th Int. Conf. Ind. Informat., 2012, pp. 815–820.                          Automot. Mech. Eng., vol. 9, pp. 1802–1819, 2014.
+[37] H. Yang, B. Jiang, and M. Staroswiecki, “Fault recoverability analy-        [58] R. Kristiansen and D. Hagen, “Modelling of actuator dynamics for
+     sis of switched systems,” Int. J. Syst. Sci. vol. 43, no. 3, pp. 535–542,        spacecraft attitude control,” J. Guid., Control, Dyn., vol. 32, no. 3,
+     2012.                                                                            pp. 1022–1025, 2009.
+[38] M. Staroswiecki, S. Attouche, and M. Assas, “A graphic approach
+     for reconfigurability analysis,” in Proc. 10th Int. Workshop Princ.
+     Diagnosis, Loch Awe, U.K., 1999.                                                                      Martin Fauré received the master’s and Ph.D.
+[39] A. Gehin, M. Assas, and M. Staroswiecki, “Structural analysis of sys-                                 degrees in automatic control from the University
+                                                                                                           of Bordeaux, Bordeaux, France, in 2018 and
+     tem reconfigurability,” in Proc. SAFEPROCESS, Budapest, Hongry:
+                                                                                                           2022, respectively.
+     IFAC, 2000, pp. 292–297.                                                                                He is currently an Engineer with Keopsys
+[40] R. Fonod, D. Henry, C. Charbonnel, E. Bornschlegl, D. Losa, and                                       Industries (subsidiary company of Lumibird),
+     S. Bennani, “Robust FDI for fault-tolerant thrust allocation with                                     Lannion, France. His research interests include
+     application to spacecraft rendezvous,” Control Eng. Pract., vol. 42,                                  model-based fault diagnosis and fault-tolerant
+     pp. 12–27, 2015.                                                                                      control.
+[41] D. Henry et al., “Model-based fault diagnosis and tolerant control:
+     The ESA’s e. Deorbit mission,” in Proc. Eur. Control Conf., 2019,
+     pp. 4356–4361.                                                                                         David Henry received the Ph.D. degree in con-
+[42] D. Henry, F. Ankersen, and L. Strippoli, “Chapter 9 - a class of                                       trol engineering from the University of Bor-
+     unknown input observers under H∞ performance for fault diagnosis:                                      deaux, Bordeaux, France, in 1999.
+                                                                                                               He is currently a Full Professor with Bordeaux
+     Application to the Mars Sample Return mission,” in New Trends                                          University, IMS laboratory (UMR CNRS 5218).
+     Observer-Based Control (Emerging Methodologies and Applica-                                            He has authored or coauthored more than 50
+     tions in Modelling Series), O. Boubaker, Q. Zhu, M. S. Mahmoud,                                        journal papers and 110 conference papers, six
+     J. Ragot, H. R. Karimi, and J. Dávila, Eds. Academic Press, 2019,                                      patents with AIRBUS, nine chapter’s book and
+     pp. 225–266.                                                                                           one complete book. He is an expert for the
+[43] R. S. Pena, R. Alonso, and P. Anigstein, “Robust optimal solution to                                   French space agency CNES (COMET SCA). He
+     the attitude/force control problem,” IEEE Trans. Aerosp. Electron.                                     was involved in a wide number of aeronautical
+     Syst., vol. 36, no. 3, pp. 784–792, Jul. 2000.                              and space projects at the European level. His current research interests in-
+[44] P. Servidia and R. S. Pena, “Thruster design for position/attitude          clude theory and applications in model-based fault diagnosis, fault-tolerant
+                                                                                 control, linear matrix inequality/nonlinear constrained optimization tech-
+     control of spacecraft,” IEEE Trans. Aerosp. Electron. Syst., vol. 38,       niques, and sliding mode control. His research application focuses on
+     no. 4, pp. 1172–1180, Oct. 2002.                                            aeronautics and space.
+[45] F. F. Saberi and M. Zandieh, “Design and analysis of gimbal thruster           Dr. Henry was the recipient of several international prizes.
+     configurations for 3-axis satellite attitude control,” Int. J. Comput.
+     Appl., vol. 112, no. 6, pp. 29–38, 2015.
+[46] Y. Yoshimura and H. Kojima, “Optimization of fault-tolerant thruster                                   Jérôme Cieslak received the Ph.D. degree in
+     configurations for satellite control,” Adv. Space Res., vol. 61, no. 6,                                control engineering from the University of Bor-
+     pp. 1617–1625, 2018.                                                                                   deaux, Bordeaux, France, in 2007.
+[47] A. Falcoz, D. Henry, and A. Zolghadri, “Robust fault diagnosis for                                        Since 2008, he has been an Associate Pro-
+     atmospheric re-entry vehicles: A case study,” IEEE Trans. Syst.,                                       fessor with the University of Bordeaux. He au-
+                                                                                                            thored or coauthored 32 articles in international
+     Man Cybern. - Part A: Syst. Hum., vol. 40, no. 5, pp. 886–899,
+                                                                                                            journals, more than 60 communications, one
+     Sep. 2010.                                                                                             scientific book, and four book chapters. He is
+[48] K. B. Lim, “Method for optimal actuator and sensor placement for                                       a coholder of 13 patents in the aerospace field.
+     large flexible structures,” J. Guid., Control, Dyn., vol. 15, no. 1,                                   He was involved in aerospace projects at the
+     pp. 49–57, 1992.                                                                                       European level as the FP7-ADDSAFE on fault
+[49] M. I. Frecker, “Recent advances in optimization of smart struc-             detection and diagnosis and the European GARTEUR FM-AG(16) on
+     tures and actuators,” J. Intell. Mater. Syst. Struct., vol. 14, no. 4–5,    fault-tolerant control. Recently, he was involved in the national project
+     pp. 207–216, 2003.                                                          DIABLO funded by the French National Agency for Research (ANR).
+[50] P. Maghami and S. Joshi, “Sensor/actuator placement for flexible            Since 2022, he coordinates a national action to promote control theory for
+                                                                                 health (diabetes, anaesthesia, neuroscience, oncology, etc.). His research
+     space structures,” IEEE Trans. Aerosp. Electron. Syst., vol. 29, no. 2,
+                                                                                 interests include fault diagnosis, fault-tolerant control, and intelligent
+     pp. 345–351, Apr. 1993.                                                     strategies for complex safety-critical systems.
+[51] J. I. Giribet, R. S. Sanchez-Pena, and A. S. Ghersin, “Analysis and            Dr. Cieslak is the recipient of the best application/case study paper of
+     design of a tilted rotor hexacopter for fault tolerance,” IEEE Trans.       the Safeprocess’ 2015 conference and the best Ph.D. thesis “Aerospace
+     Aerosp. Electron. Syst., vol. 52, no. 4, pp. 1555–1567, Aug. 2016.          Valley” 2014.
+
+
+FAURÉ ET AL.: OPTIMIZATION OF SPACECRAFT THRUSTERS CONFIGURATION                                                                                       5285
+
+Authorized licensed use limited to: Harbin Institute of Technology. Downloaded on January 26,2026 at 11:42:59 UTC from IEEE Xplore. Restrictions apply.
+                          Pierre Lachevre received the engineering de-                                     Finn Ankersen received the M.Sc.EE. degree in
+                          gree from Ecole Polytechnique, Palaiseau,                                        automatic control systems and the Ph.D. degree
+                          France, and the M.Sc. degree from the Stanford                                   in robust control for spacecraft rendezvous and
+                          University, Stanford, CA, USA, both in aeronau-                                  docking (RVD) from Aalborg University, Aal-
+                          tics and astronautics.                                                           borg, Denmark, in 1985 and 2011, respectively.
+                             He is currently the GNC Development Engi-                                        He is a Senior Controls and Guidance, Nav-
+                          neer with the Advanced Studies team, Airbus                                      igation and Control (GNC) Systems Engineer
+                          Defence and Space, Taufkirchen, Germany. Be-                                     with the European Space Agency. He has had a
+                          fore joining this team, he worked on explor-                                     key role in the development of the ESA’s RVD
+                          ing artificial intelligence application for attitude                             and Formation Flying programs. This has led to
+                          control use cases. His research interests include                                five successful automatic RVD missions of the
+rendezvous topics, including guidance optimization and thruster allocation       ATV spacecraft to the space station. Further, he has close cooperation with
+topics.                                                                          researchers in both academia and industry. Finally, he has good experience
+                                                                                 in flight operations for GNC systems on RVD missions, latest on the
+                                                                                 Artemis-1 mission to the moon. His research interest includes the domain
+                                                                                 of robust control systems for spacecraft control for various missions and
+                                                                                 with a particular focus on multiple spacecraft missions.
+                                                                                    Dr. Ankersen is a Senior Member of IFAC and IEEE control systems
+                                                                                 societies.
+
+
+
+
+5286                               IEEE TRANSACTIONS ON AEROSPACE AND ELECTRONIC SYSTEMS VOL. 59, NO. 5 OCTOBER 2023
+
+  Authorized licensed use limited to: Harbin Institute of Technology. Downloaded on January 26,2026 at 11:42:59 UTC from IEEE Xplore. Restrictions apply.
+

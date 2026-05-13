@@ -1,9 +1,9 @@
 function out = sim_combined_fault(P, opts)
 % SIM_COMBINED_FAULT  Coupled attitude/orbit maneuver under actuator faults.
 %
-% The simulation reuses the existing wheel attitude controller and
-% thruster force/torque allocator. Fault states are injected through health
-% and thrust-scale vectors; no control-law internals are modified.
+% The simulation reuses the existing wheel attitude controller, thruster
+% allocator, and online actuator diagnosis. True fault states are injected
+% only into the plant; the control allocation uses estimated health.
 %
 % Required input:
 %   P : satellite parameter struct with selected thruster layout.
@@ -12,6 +12,8 @@ function out = sim_combined_fault(P, opts)
 %   .wheel_health      1xN logical vector, true = wheel healthy
 %   .thruster_health   1xM logical vector, true = thruster healthy
 %   .thruster_scale    1xM thrust scale, 1 nominal, 0.4 degraded
+%   .use_diagnosis     true enables online diagnosis, default true
+%   .fault_time_s      time when true faults become active, default 1.5 s
 %   .dv_dir_body       3x1 target delta-v direction in body frame
 %   .dt                integration step [s], default 0.1
 %   .T_burn            maneuver burn duration [s], default 40
@@ -61,20 +63,23 @@ opts = local_default(opts, 'min_force_scale', 0.2);
 opts = local_default(opts, 'force_scale_grid', [1 0.8 0.6 0.4 0.3 0.2]);
 opts = local_default(opts, 'dv_completion_tol', 1e-3);
 opts = local_default(opts, 'max_wheel_torque_frac', 0.7);
+opts = local_default(opts, 'use_diagnosis', true);
+opts = local_default(opts, 'fault_time_s', 1.5);
 
-wheel_health = logical(opts.wheel_health);
-thruster_health = logical(opts.thruster_health);
-thruster_scale = opts.thruster_scale;
+wheel_health_final = logical(opts.wheel_health);
+thruster_health_final = logical(opts.thruster_health);
+thruster_scale_final = opts.thruster_scale;
+thruster_scale_final(~thruster_health_final) = 0;
 dv_dir_body = opts.dv_dir_body(:);
 if norm(dv_dir_body) < eps
     error('dv_dir_body must be nonzero.');
 end
 dv_dir_body = dv_dir_body / norm(dv_dir_body);
 
-if numel(wheel_health) ~= Nw
+if numel(wheel_health_final) ~= Nw
     error('wheel_health must have length P.wheel.N.');
 end
-if numel(thruster_health) ~= M || numel(thruster_scale) ~= M
+if numel(thruster_health_final) ~= M || numel(thruster_scale_final) ~= M
     error('thruster_health and thruster_scale must have length P.thr.M.');
 end
 
@@ -92,8 +97,15 @@ attitude_first_used = false;
 retarget_feasible = true;
 retarget_force_rel = 0;
 if opts.attitude_first_orbit
+    if opts.use_diagnosis
+        retarget_health = true(1, M);
+        retarget_scale = ones(1, M);
+    else
+        retarget_health = thruster_health_final;
+        retarget_scale = thruster_scale_final;
+    end
     [burn_dir_body, attitude_first_used, retarget_feasible, retarget_force_rel] = ...
-        local_select_burn_direction(P, thruster_health, thruster_scale, ...
+        local_select_burn_direction(P, retarget_health, retarget_scale, ...
         F_cmd_mag, dv_dir_body, opts.retarget_force_tol);
 end
 q_cmd_burn = local_quat_from_two_vectors(burn_dir_body, dv_dir_inertial);
@@ -112,9 +124,11 @@ t = (0:num_steps-1).' * dt;
 q = [cos(deg2rad(2.5)); 0; 0; sin(deg2rad(2.5))];
 w = deg2rad([0.3; -0.2; 0.1]);
 dv_acc = zeros(3, 1);          % accumulated inertial-frame delta-v
-wheel_axes = P.wheel.axes;
-wheel_axes(:, ~wheel_health) = 0;
-wheel_rank_loss = rank(wheel_axes, 1e-6) < 3;
+wheel_health_est = true(1, Nw);
+thruster_health_est = true(1, M);
+thruster_scale_est = ones(1, M);
+diag_state = [];
+diag_out = local_default_diag(P);
 
 q_log = zeros(4, num_steps);
 w_log = zeros(3, num_steps);
@@ -129,9 +143,33 @@ thr_feasible_log = false(1, num_steps);
 res_force_log = zeros(1, num_steps);
 res_torque_log = zeros(1, num_steps);
 force_scale_log = zeros(1, num_steps);
+gamma_log = zeros(Nw + M, num_steps);
+wheel_health_est_log = false(Nw, num_steps);
+wheel_health_true_log = false(Nw, num_steps);
+thruster_scale_est_log = zeros(M, num_steps);
+thruster_scale_true_log = zeros(M, num_steps);
+fault_alarm_log = false(1, num_steps);
+diag_res_log = zeros(6, num_steps);
 burn_complete_s = NaN;
 
 for k = 1:num_steps
+    if t(k) >= opts.fault_time_s
+        wheel_health_true = wheel_health_final;
+        thruster_scale_true = thruster_scale_final;
+    else
+        wheel_health_true = true(1, Nw);
+        thruster_scale_true = ones(1, M);
+    end
+    thruster_health_true = thruster_scale_true > 0;
+    if ~opts.use_diagnosis
+        wheel_health_est = wheel_health_true;
+        thruster_health_est = thruster_health_true;
+        thruster_scale_est = thruster_scale_true;
+    end
+    wheel_axes_est = P.wheel.axes;
+    wheel_axes_est(:, ~wheel_health_est) = 0;
+    wheel_rank_loss = rank(wheel_axes_est, 1e-6) < 3;
+
     q_cmd = q_cmd_burn;
     [qm, wm] = sensor_model(q, w, P.sensor);
     qe = qmult(qinv(q_cmd), qm);
@@ -149,28 +187,47 @@ for k = 1:num_steps
     assist_active = wheel_rank_loss;
     force_scale = 1;
     if opts.torque_safe_throttle && burn_active
-        [F_body_cmd, F, Fb, Tb_thr, info_thr, Tw_body, Tw, info_wheel, force_scale] = ...
+        [F_body_cmd, F, ~, ~, info_thr, ~, Tw, info_wheel, force_scale] = ...
             local_allocate_with_torque_margin(F_body_cmd, qe, we, P, ...
-            wheel_health, thruster_health, thruster_scale, assist_active, ...
+            wheel_health_est, thruster_health_est, thruster_scale_est, assist_active, ...
             opts.force_scale_grid, opts.min_force_scale, opts.max_wheel_torque_frac);
         T_thr_des = info_thr.T_des;
     else
-        [F, Fb, Tb_thr, info_thr] = local_allocate_thruster_step(F_body_cmd, ...
-            qe, we, P, wheel_health, thruster_health, thruster_scale, assist_active);
+        [F, ~, Tb_thr, info_thr] = local_allocate_thruster_step(F_body_cmd, ...
+            qe, we, P, wheel_health_est, thruster_health_est, thruster_scale_est, assist_active);
         T_thr_des = info_thr.T_des;
-        [Tw_body, Tw, info_wheel] = wheel_attitude_controller(qe, we, P, ...
-            wheel_health, Tb_thr);
+        [~, Tw, info_wheel] = wheel_attitude_controller(qe, we, P, ...
+            wheel_health_est, Tb_thr);
     end
 
+    F_actual = F .* thruster_scale_true(:);
+    Fb_actual = P.thr.dirs * F_actual;
+    Tb_actual = cross(P.thr.pos, P.thr.dirs, 1) * F_actual;
+    Tw_actual = Tw .* double(wheel_health_true(:));
+    Tw_body_actual = P.wheel.axes * Tw_actual;
+
     Td = 1e-5 * [sin(0.01 * t(k)); cos(0.01 * t(k)); 0.2];
-    [q, w] = attitude_dynamics(q, w, Tw_body + Tb_thr, Td, P.J, P.Jinv, dt);
-    dv_acc = dv_acc + (local_quat_to_dcm(q) * Fb / P.mass) * dt;
+    [q, w] = attitude_dynamics(q, w, Tw_body_actual + Tb_actual, Td, P.J, P.Jinv, dt);
+    dv_acc = dv_acc + (local_quat_to_dcm(q) * Fb_actual / P.mass) * dt;
     if burn_active && isnan(burn_complete_s) && ...
             dot(dv_acc, dv_dir_inertial) >= dv_target_mag * (1 - opts.dv_completion_tol)
         burn_complete_s = t(k);
     end
 
-    Fmax_eff = P.thr.Fmax * thruster_scale(:) .* double(thruster_health(:));
+    accel_meas = local_accel_measurement(Fb_actual / P.mass, P.sensor);
+    if opts.use_diagnosis
+        u_diag = [Tw; F];
+        actuator_meas = [Tw_actual; F_actual];
+        [diag_out, diag_state] = actuator_fault_diagnosis(u_diag, wm, accel_meas, ...
+            t(k), P, diag_state, dt, actuator_meas);
+        wheel_health_est = diag_out.wheel_health_est;
+        thruster_health_est = diag_out.thruster_health_est;
+        thruster_scale_est = diag_out.thruster_scale_est;
+    else
+        diag_out = local_truth_diag(P, wheel_health_true, thruster_health_true, thruster_scale_true);
+    end
+
+    Fmax_cmd = P.thr.Fmax * double(thruster_health_est(:));
     q_log(:, k) = q;
     w_log(:, k) = w;
     qe_true = qmult(qinv(q_cmd), q);
@@ -180,12 +237,19 @@ for k = 1:num_steps
     dv_log(:, k) = dv_acc;
     mode_log(k) = 1 + double(assist_active);
     wheel_sat_log(k) = info_wheel.saturated;
-    active_thrusters = Fmax_eff > 0;
-    thr_sat_log(k) = any(active_thrusters & F >= (Fmax_eff - 1e-7));
+    active_thrusters = Fmax_cmd > 0;
+    thr_sat_log(k) = any(active_thrusters & F >= (Fmax_cmd - 1e-7));
     thr_feasible_log(k) = info_thr.feasible;
-    res_force_log(k) = norm(Fb - F_body_cmd);
-    res_torque_log(k) = norm(Tb_thr - T_thr_des);
+    res_force_log(k) = norm(Fb_actual - F_body_cmd);
+    res_torque_log(k) = norm(Tb_actual - T_thr_des);
     force_scale_log(k) = force_scale;
+    gamma_log(:, k) = diag_out.gamma_hat;
+    wheel_health_est_log(:, k) = diag_out.wheel_health_est(:);
+    wheel_health_true_log(:, k) = wheel_health_true(:);
+    thruster_scale_est_log(:, k) = diag_out.thruster_scale_est(:);
+    thruster_scale_true_log(:, k) = thruster_scale_true(:);
+    fault_alarm_log(k) = diag_out.fault_alarm;
+    diag_res_log(:, k) = diag_out.res_vec;
 end
 
 window_s = opts.sat_window_s;
@@ -231,9 +295,19 @@ out.attitude_first_used = attitude_first_used;
 out.retarget_feasible = retarget_feasible;
 out.retarget_force_rel = retarget_force_rel;
 out.mode = mode_log;
-out.wheel_health = wheel_health;
-out.thruster_health = thruster_health;
-out.thruster_scale = thruster_scale;
+out.wheel_health = wheel_health_final;
+out.thruster_health = thruster_health_final;
+out.thruster_scale = thruster_scale_final;
+out.true_wheel_health = wheel_health_true_log;
+out.true_thruster_scale = thruster_scale_true_log;
+out.wheel_health_est = wheel_health_est_log;
+out.thruster_scale_est = thruster_scale_est_log;
+out.gamma_hat = gamma_log;
+out.fault_alarm = fault_alarm_log;
+out.detect_time = diag_out.detect_time;
+out.diag_residual = diag_res_log;
+out.use_diagnosis = opts.use_diagnosis;
+out.fault_time_s = opts.fault_time_s;
 out.assist_used = any(mode_log == 2);
 out.steady_mean_deg = steady_mean_deg;
 out.steady_max_deg = steady_max_deg;
@@ -364,6 +438,35 @@ v = qe(2:4);
 if qe(1) < 0
     v = -v;
 end
+end
+
+% -------------------------------------------------------------------------
+function accel_meas = local_accel_measurement(accel_true, sensor)
+accel_meas = accel_true(:);
+if isfield(sensor, 'accel_bias')
+    accel_meas = accel_meas + sensor.accel_bias(:);
+end
+if isfield(sensor, 'accel_sigma')
+    accel_meas = accel_meas + sensor.accel_sigma * randn(3, 1);
+end
+end
+
+% -------------------------------------------------------------------------
+function diag_out = local_default_diag(P)
+diag_out = local_truth_diag(P, true(1, P.wheel.N), true(1, P.thr.M), ones(1, P.thr.M));
+diag_out.detect_time = NaN;
+end
+
+% -------------------------------------------------------------------------
+function diag_out = local_truth_diag(~, wheel_health, thruster_health, thruster_scale)
+gamma = [double(wheel_health(:)); thruster_scale(:)];
+diag_out.gamma_hat = gamma;
+diag_out.fault_alarm = any(~wheel_health) || any(~thruster_health) || any(thruster_scale < 1);
+diag_out.detect_time = NaN;
+diag_out.res_vec = zeros(6, 1);
+diag_out.wheel_health_est = logical(wheel_health);
+diag_out.thruster_health_est = logical(thruster_health);
+diag_out.thruster_scale_est = thruster_scale;
 end
 
 % -------------------------------------------------------------------------
