@@ -22,7 +22,7 @@ if ~exist(outdir, 'dir')
 end
 
 P = satellite_params();
-configs = thruster_configurations(P.dim, P.thr.Fmax);
+configs = thruster_configurations(P.dim, P.thr.Fmax, P.J);
 
 layout_files = { ...
     'layout_a_6orth.png', ...

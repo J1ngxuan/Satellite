@@ -23,7 +23,7 @@ fprintf('Reaction wheels: %d (pyramid)  | Wheel Tmax = %.3f Nm\n', ...
 
 % ---------- (1) Thruster configuration trade study ---------------------
 fprintf('\n--- Thruster Configuration Trade Study ---\n');
-configs = thruster_configurations(P.dim, P.thr.Fmax);
+configs = thruster_configurations(P.dim, P.thr.Fmax, P.J);
 fprintf('%-12s %4s %10s %12s %12s\n','Name','M','Redundant','eta_iso','eta_axis_avg');
 for k=1:numel(configs)
     c = configs(k);

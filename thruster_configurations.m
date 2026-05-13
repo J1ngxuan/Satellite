@@ -1,9 +1,10 @@
-function configs = thruster_configurations(dim, Fmax)
+function configs = thruster_configurations(dim, Fmax, J)
 % THRUSTER_CONFIGURATIONS  Library of candidate thruster layouts (>=3).
 %
 % Inputs
 %   dim  : 3x1 body dimensions [m]
 %   Fmax : max per-nozzle thrust [N]
+%   J    : optional 3x3 inertia tensor used to tune non-orthogonal layout
 %
 % Output
 %   configs : struct array with fields
@@ -24,7 +25,10 @@ function configs = thruster_configurations(dim, Fmax)
 % translation along unit direction u using non-negative least squares so
 % net torque ~= 0 (attitude is not disturbed).
 
-if nargin<1, P=satellite_params(); dim=P.dim; Fmax=P.thr.Fmax; end
+P_ref = satellite_params();
+if nargin < 1 || isempty(dim), dim = P_ref.dim; end
+if nargin < 2 || isempty(Fmax), Fmax = P_ref.thr.Fmax; end
+if nargin < 3 || isempty(J), J = P_ref.J; end
 
 hx=dim(1)/2; hy=dim(2)/2; hz=dim(3)/2;
 
@@ -64,8 +68,8 @@ C.pos  = [ -hx -hx  hx  hx  0   0   0   0  hx -hx  hx -hx;
 % every individual nozzle (zero parasitic torque per thruster - ideal
 % for orbit-control-without-attitude-maneuver).  A 1-D nonlinear
 % optimisation blends this omnidirectional geometry with axis-aligned
-% directions, weighted by the inertia asymmetry (I_x < I_y = I_z).
-E = build_icosa_config(dim, diag([0.288 0.45025 0.45025]));
+% directions, weighted by the configured principal-axis inertia asymmetry.
+E = build_icosa_config(dim, J);
 
 % Assemble and analyze
 raw = [A B C E];
@@ -166,8 +170,8 @@ function E = build_icosa_config(dim, J)
 % A 1-D nonlinear search blends each thrust direction toward the
 % radial-from-center direction (which would zero the torque and
 % maximise translation efficiency) by fraction alpha, weighted by the
-% inertia asymmetry I_x < I_y = I_z.  The optimum trades torque
-% authority on the low-inertia X axis against omnidirectional thrust.
+% configured inertia asymmetry.  The optimum trades torque authority on
+% lower-inertia axes against omnidirectional thrust.
 %
 % Inputs:
 %   dim : 3x1 body dimensions [m]

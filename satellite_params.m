@@ -35,15 +35,18 @@ function P = satellite_params()
 %       .J2       : J2 zonal harmonic
 %
 % --- Mass and geometry --------------------------------------------------
-P.mass = 30;                                    % [kg]
-P.dim  = [0.350; 0.240; 0.240];                 % [m]
-P.J    = diag([0.288, 0.45025, 0.45025]);       % [kg*m^2]
+% Representative paper-study platform values.  They intentionally differ
+% from any specific flight article while preserving the same small-sat
+% class and principal-axis inertia ordering used by the controller study.
+P.mass = 32;                                  % [kg]
+P.dim  = [0.360; 0.250; 0.240];                 % [m]
+P.J    = diag([0.298, 0.456, 0.442]);           % [kg*m^2]
 P.Jinv = inv(P.J);
 
 % --- Reaction wheels (default 4 wheels in pyramid 35.26 deg from Z) -----
 beta = atan(1/sqrt(2));                         % pyramid half-cone angle
 P.wheel.Tmax = 0.02;                            % [Nm] max wheel torque
-P.wheel.Hmax = 0.5;                             % [Nms] (representative)
+P.wheel.Hmax = 0.6;                            % [Nms] (representative)
 P.wheel.axes = [ sin(beta)*[1 -1 -1  1];
                  sin(beta)*[1  1 -1 -1];
                  cos(beta)*[1  1  1  1] ];      % 3x4 unit vectors
